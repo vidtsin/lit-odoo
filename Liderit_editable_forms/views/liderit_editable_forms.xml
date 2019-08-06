@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<openerp>
+    <data>
+    
+
+
+
+        <record id="sale_view_order_inherit_replace_form_form" model="ir.ui.view">
+    <field name="name">sale.view.order.inherit.replace.form.form</field>
+    <field name="model">sale.order</field>
+    <field name="inherit_id" ref="sale.view_order_form"/>
+    <field name="arch" type="xml">
+        <xpath expr="//field[@name='order_line']/tree" position="attributes">
+            <attribute name="editable">top</attribute>
+        </xpath>
+    </field>
+</record>
+    </data>
+</openerp>

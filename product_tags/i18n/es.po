@@ -1,0 +1,128 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* product_tags
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 8.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2018-09-10 08:09+0000\n"
+"PO-Revision-Date: 2018-09-10 10:12+0100\n"
+"Last-Translator: <>\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: \n"
+"Language: es\n"
+"X-Generator: Poedit 1.6.10\n"
+
+#. module: product_tags
+#: field:product.tag,active:0
+msgid "Active"
+msgstr "Activo"
+
+#. module: product_tags
+#: field:product.tag,child_ids:0
+msgid "Child Tags"
+msgstr "Etiquetas hijas"
+
+#. module: product_tags
+#: field:product.tag,create_uid:0
+msgid "Created by"
+msgstr "Creado por"
+
+#. module: product_tags
+#: field:product.tag,create_date:0
+msgid "Created on"
+msgstr "Creado el"
+
+#. module: product_tags
+#: field:product.tag,display_name:0
+msgid "Full Name"
+msgstr "Nombre"
+
+#. module: product_tags
+#: field:product.tag,id:0
+msgid "ID"
+msgstr "ID"
+
+#. module: product_tags
+#: field:product.tag,image:0
+msgid "Image"
+msgstr "Imagen"
+
+#. module: product_tags
+#: field:product.tag,__last_update:0
+msgid "Last Modified on"
+msgstr "Last Modified on"
+
+#. module: product_tags
+#: field:product.tag,write_uid:0
+msgid "Last Updated by"
+msgstr "Last Updated by"
+
+#. module: product_tags
+#: field:product.tag,write_date:0
+msgid "Last Updated on"
+msgstr "Last Updated on"
+
+#. module: product_tags
+#: field:product.tag,parent_left:0
+msgid "Left Parent"
+msgstr "Left Parent"
+
+#. module: product_tags
+#: field:product.tag,parent_id:0
+msgid "Parent Tag"
+msgstr "Etiqueta Padre"
+
+#. module: product_tags
+#: view:product.tag:product_tags.product_tag_form
+msgid "Product Tag"
+msgstr "Etiqueta de Producto"
+
+#. module: product_tags
+#: model:ir.actions.act_window,name:product_tags.product_tag_action_form
+#: model:ir.model,name:product_tags.model_product_tag
+#: model:ir.ui.menu,name:product_tags.menu_product_tag_action_form
+#: view:product.tag:product_tags.product_tag_list
+#: view:product.tag:product_tags.product_tag_tree
+msgid "Product Tags"
+msgstr "Etiquetas de productos"
+
+#. module: product_tags
+#: model:ir.model,name:product_tags.model_product_template
+msgid "Product Template"
+msgstr "Plantilla producto"
+
+#. module: product_tags
+#: field:product.tag,parent_right:0
+msgid "Right Parent"
+msgstr "Right Parent"
+
+#. module: product_tags
+#: view:product.tag:product_tags.product_tag_search
+msgid "Tag"
+msgstr "Etiqueta"
+
+#. module: product_tags
+#: field:product.tag,name:0
+msgid "Tag Name"
+msgstr "Nombre Etiqueta"
+
+#. module: product_tags
+#: view:product.template:product_tags.product_template_tag_search_inherit
+#: field:product.template,tag_ids:0
+msgid "Tags"
+msgstr "Etiquetas"
+
+#. module: product_tags
+#: view:product.template:product_tags.product_template_form_inherit
+msgid "Tags..."
+msgstr "Etiquetas..."
+
+#. module: product_tags
+#: help:product.tag,active:0
+msgid "The active field allows you to hide the tag without removing it."
+msgstr "El campo 'activo' permite ocultar la etiqueta sin eliminarla."

@@ -1,0 +1,12 @@
+/*
+agregado 19-04-18 para cambiar logo de entrada
+*/
+
+body.oe_single_form .oe_single_form_container .oe_single_form_logo img {
+    width:380px; /* Width of new image */
+    height:81px; /* Height of new image */
+    box-sizing:border-box;
+    padding-left: 380px; /*width of the image*/
+    background: url(https://i.imgur.com/9zEnZ5c.jpg) left top no-repeat;
+    background-size: 370px 80px;
+}

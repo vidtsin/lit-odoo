@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<openerp>
+    <data>
+    	<record id="liderit_view_partner_form_move_ref_client" model="ir.ui.view">
+            <field name="model">res.partner</field>
+            <field name="inherit_id" ref="base.view_partner_form"/>
+            <field name="arch" type="xml">
+            <xpath expr="//notebook/page[@name='sales_purchases']/group/group/field[@name='ref']" position="replace">
+                </xpath>
+
+           <xpath expr="//field[@name='category_id']" position="before">
+                    <group>
+                        <field name="ref"/>
+                    </group>
+                </xpath>
+                 <xpath expr="//notebook/page[@name='sales_purchases']" position="after">
+                    <page string="Productos">
+                         <field name="product_ids"  widget="one2many_list">
+                            <tree>
+                                  
+                                    <field string="Producto" name="product_tmpl_id"/>
+                                    <field name="delay"/>
+                                    <field name="min_qty"/>
+                    
+                            </tree>
+
+                    </field>
+                    </page>    
+                </xpath>
+            </field>
+        </record>
+
+
+        <record id="liderit_filtros_res_partner" model="ir.ui.view">
+            <field name="name">liderit.filtros.res.partner</field>
+            <field name="model">res.partner</field>
+            <field name="inherit_id" ref="base.view_res_partner_filter"/>
+            <field name="arch" type="xml">
+
+                <field name="name" position="replace">
+                    <field name="name" filter_domain="['|','|','|','|','|',('display_name','ilike',self),('ref','ilike',self),('email','ilike',self),('comercial','ilike',self),('parent_id','ilike',self),('city','ilike',self)]"/>
+                </field>
+            
+            </field>
+        </record> 
+
+
+         
+
+
+    </data>
+</openerp>

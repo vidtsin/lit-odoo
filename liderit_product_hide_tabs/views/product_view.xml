@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<openerp>
+    <data>
+    	 <record id="product_template_hide_tabs" model="ir.ui.view">
+            <field name="name">product.template_hide_tabs</field>
+            <field name="model">product.template</field>
+            <field name="inherit_id" ref="product.product_template_form_view"/>
+            <field name="arch" type="xml">
+             	<xpath expr="//form/sheet/notebook//page[@string='Procurements']" position="attributes">
+                    <!--<attribute name="invisible">1</attribute>-->
+                    <attribute name="groups">stock.group_stock_manager</attribute>
+                </xpath>
+                <xpath expr="//form/sheet/notebook//page[@string='Inventory']" position="attributes">
+                	<!--<attribute name="invisible">1</attribute>-->
+                    <attribute name="groups">stock.group_stock_manager</attribute>
+                </xpath>
+                <xpath expr="//form/sheet/notebook//page[@string='Sales']" position="attributes">
+                    <!--<attribute name="invisible">1</attribute>-->
+                    <attribute name="groups">stock.group_stock_manager</attribute>
+                </xpath>
+               
+                <xpath expr="//form/sheet/notebook//page[@string='Accounting']" position="attributes">
+                    <!--<attribute name="invisible">1</attribute>-->
+                    <attribute name="groups">stock.group_stock_manager</attribute>
+                </xpath>
+                 <xpath expr="//field[@name='type']" position="attributes">
+                            <attribute name="readonly">1</attribute>
+                    </xpath>
+                     <!--xpath expr="//field[@name='categ_id']" position="attributes">
+                           <attribute name="invisible">1</attribute>
+                    </xpath>
+                     <xpath expr="//label[@for='categ_id']" position="attributes">
+                           <attribute name="invisible">1</attribute>
+                    </xpath-->
+                     <xpath expr="//div[@name='options']" position="attributes">
+                           <attribute name="invisible">1</attribute>
+                    </xpath>
+                     
+                     
+
+
+            </field>
+        </record>
+
+        <record id="product_product_hide_tabs" model="ir.ui.view">
+            <field name="name">product.product_hide_tabs</field>
+            <field name="model">product.product</field>
+            <field name="inherit_id" ref="product.product_normal_form_view"/>
+            <field name="arch" type="xml">
+             	<xpath expr="//form/sheet/notebook//page[@string='Procurements']" position="attributes">
+                    <!--<attribute name="invisible">1</attribute>-->
+                    <attribute name="groups">stock.group_stock_manager</attribute>
+                </xpath>
+                <xpath expr="//form/sheet/notebook//page[@string='Inventory']" position="attributes">
+                	<!--<attribute name="invisible">1</attribute>-->
+                    <attribute name="groups">stock.group_stock_manager</attribute>
+                </xpath>
+                <xpath expr="//form/sheet/notebook//page[@string='Sales']" position="attributes">
+                    <!--<attribute name="invisible">1</attribute>-->
+                    <attribute name="groups">stock.group_stock_manager</attribute>
+                </xpath>
+               
+                <xpath expr="//form/sheet/notebook//page[@string='Accounting']" position="attributes">
+                    <!--<attribute name="invisible">1</attribute>-->
+                    <attribute name="groups">stock.group_stock_manager</attribute>
+                </xpath>
+                 <xpath expr="//field[@name='type']" position="attributes">
+                            <attribute name="readonly">1</attribute>
+                    </xpath>
+                    <!--xpath expr="//field[@name='categ_id']" position="attributes">
+                           <attribute name="invisible">1</attribute>
+                    </xpath>
+                    <xpath expr="//label[@for='categ_id']" position="attributes">
+                           <attribute name="invisible">1</attribute>
+                    </xpath-->
+                     <xpath expr="//div[@name='options']" position="attributes">
+                           <attribute name="invisible">1</attribute>
+                    </xpath>
+                    
+
+            </field>
+        </record>
+
+
+        <record id="product_category_hide_logistics" model="ir.ui.view">
+            <field name="name">product.category_hide_logistics</field>
+            <field name="model">product.category</field>
+            <field name="inherit_id" ref="stock.product_category_form_view_inherit"/>
+            <field name="arch" type="xml">
+                
+                    <xpath expr="//group[@string='Logistics']" position="attributes">
+                           <attribute name="invisible">1</attribute>
+                    </xpath>
+                    
+                    
+
+            </field>
+        </record> 
+
+        <record id="product_category_hide_account" model="ir.ui.view">
+            <field name="name">product.category_hide_account</field>
+            <field name="model">product.category</field>
+            <field name="inherit_id" ref="account.view_category_property_form"/>
+            <field name="arch" type="xml">
+                
+                    
+                    <xpath expr="//group[@string='Account Properties']" position="attributes">
+                           <attribute name="invisible">1</attribute>
+                    </xpath>
+                    
+
+            </field>
+        </record>
+
+        <record id="product_category_hide_account_stock" model="ir.ui.view">
+            <field name="name">product.category_hide_account_stock</field>
+            <field name="model">product.category</field>
+            <field name="inherit_id" ref="stock_account.view_category_property_form"/>
+            <field name="arch" type="xml">
+                
+                    
+                    <xpath expr="//group[@name='account_stock_property']" position="attributes">
+                           <attribute name="invisible">1</attribute>
+                    </xpath>
+                    
+
+            </field>
+        </record>
+
+       
+       
+
+    </data>
+</openerp>

@@ -1,0 +1,202 @@
+.openerp .oe_view_manager table.oe_view_manager_header h1 {
+    font-size: 18px;
+    margin: 0;
+    float: left;
+    line-height: 30px;
+}
+
+.acc_filling {
+  //  display: none;
+}
+
+.acc_filling_opt {
+//    display: none;
+}
+
+.acc_small {
+    font-size: 10px;
+}
+
+a[href^="mailto:"],
+a[href^="#"] {
+	color: #525081 !important;
+}
+
+.oe_facet_category.oe_i {
+	color: #FFFFFF !important;
+    background-color: #514F82 !important;
+}
+
+.openerp .oe_searchview .oe_searchview_facets .oe_searchview_facet .oe_facet_category{
+    color: #FFFFFF !important;
+    background-color: #514F82 !important;
+}
+
+button.close {
+    color: #525081 !important;
+    opacity: 1 !important;
+}
+
+/* 
+agregado v 2.0
+*/
+
+.oe_secondary_menu_section,
+.oe_kanban_action,
+.oe_kanban_action_a,
+.oe_facet_remove,
+.oe_e,
+.oe_compose_post,
+.oe_compose_log,
+.oe_subtle,
+.oe_grey,
+.oe_form_sheetbg,
+.acc_filling {
+    color: #525081 !important;
+}
+
+.oe_menu_leaf .oe_menu_text,
+.numpad,
+.price-tag {
+    color: #000000 !important;
+}
+
+
+.oe_abstractformpopup-form-close,
+.oe_bold,
+.oe_form_button_cancel {
+    color: #525081 !important;
+}
+
+/*
+.oe_list_field_cell,
+.oe_list_field_char,
+.oe_readonly{
+    color: #AD0000 !important;
+}
+*/
+
+.oe_list_field_cell,
+.oe_list_field_char,
+.oe_list_record_selector,
+.oe_readonly,
+.oe_fade,
+.oe_searchview_search,
+.oe_salesteams_help,
+.oe_view_nocontent,
+.oe_required{
+    color: #545454 !important;
+}
+
+.openerp .oe_fileupload .oe_add .oe_attach_label .oe_import_csv{
+    color: #525081 !important;
+}
+
+.openerp .oe_application a{
+    color: #525081 !important;
+}
+
+.openerp .oe_searchview .oe-autocomplete ul li.oe-selection-focus {
+	background-color: #525081 !important;
+}
+
+.orderline .empty,
+.entry.total,
+.subentry {
+    color: #545454 !important;
+}
+
+
+.openerp .oe_view_manager table.oe_view_manager_header {
+    border-collapse: separate;
+    background: #D9D9D9!important;
+}
+
+.openerp button.oe_highlight {
+    background: #c02c2c!important;
+}
+
+.ui-datepicker th,
+.ui-datepicker .ui-datepicker-header {
+	color: #545454 !important;
+}
+
+.ui-datepicker td .ui-state-active {
+	background: #cccccc!important;
+}
+
+.ui-widget-content {
+	background: white !important;
+}
+
+.fc-state-default,
+.openerp .oe_list_content > tbody > tr:nth-child(2n+1) {
+	background-image: none !important;
+}
+
+.ui-state-disabled, .ui-widget-content .ui-state-disabled, 
+.ui-widget-header .ui-state-disabled {
+	opacity: 1;
+}
+
+.fc-grid .fc-other-month .fc-day-number,
+.fc-state-disabled {
+	opacity: 1;
+	color: #240EEF !important;
+}
+
+.openerp .oe_calendar_table .cal_opacity,
+.openerp .oe_kanban_view .oe_kanban_group_title_vertical {
+	opacity: 1;
+}
+
+.fc-event {
+	color:#000000 !important;
+}
+
+a.oe_shortcuts_toggle {
+	background: none !important;
+}
+
+.openerp .oe_view_nocontent .oe_view_nocontent_create::before {
+	background: none;
+}
+
+.openerp .oe_kanban_view.oe_kanban_grouped .oe_kanban_dummy_cell {
+	background: none;
+}
+
+.openerp a.button:link, .openerp a.button:visited, .openerp button, .openerp .oe_button, .openerp input[type="submit"],
+.openerp ul.oe_form_status li, .openerp ul.oe_form_status_clickable li,
+.openerp ul.oe_form_status li.oe_active, .openerp ul.oe_form_status_clickable li.oe_active {
+	background-image: none !important;
+}
+
+.openerp .oe_kanban_view .oe_kanban_add {
+	top: 0px;
+}
+
+.openerp .oe_kanban_view .oe_kanban_group_title_vertical {
+	top: 80px;
+}
+
+.openerp ul.oe_form_status li.oe_active, .openerp ul.oe_form_status_clickable li.oe_active {
+	background-color: #240EEF !important;
+}
+
+
+.openerp ul.oe_form_status_clickable li > .label {
+	color:#000000;
+}
+.openerp ul.oe_form_status_clickable li.oe_active > .label {
+	color:white !important;
+}
+
+/* 
+agregado 6-12 manuel
+*/
+
+.openerp .nav-pills > li.active > a, 
+.openerp a.list-group-item.active > a {
+    background-color: #9797BF !important;
+}

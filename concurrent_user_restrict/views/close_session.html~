@@ -1,0 +1,10 @@
+<html><head>
+<body>
+Do you want to close other session?
+<button onclick="window.location.href='/baoshop_customer/close_session/yes'">yes</button>
+<button onclick="window.location.href='/web/login'">No</button>
+
+
+</body>
+
+</head></html>
