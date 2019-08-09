@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+        <record id="hielos_import_orders_europastry_cron" model="ir.cron">
+            <field name="name">Europastry Import Orders</field>
+            <field name="user_id" ref="base.user_root"/>
+            <field name="interval_number">1</field>
+            <field name="interval_type">hours</field>
+            <field name="numbercall">0</field>
+            <field eval="False" name="doall"/>
+            <field eval="'europastry.pedido'" name="model" />
+            <field eval="'import_orders_europ'" name="function"/>
+        </record>
+
+        <record id="hielos_create_orders_europastry_cron" model="ir.cron">
+            <field name="name">Europastry Create Orders</field>
+            <field name="user_id" ref="base.user_root"/>
+            <field name="interval_number">1</field>
+            <field name="interval_type">hours</field>
+            <field name="numbercall">0</field>
+            <field eval="False" name="doall"/>
+            <field eval="'sale.order'" name="model" />
+            <field eval="'create_orders_europ'" name="function"/>
+        </record>
+        
+        <record model="ir.ui.view" id="view_europastry_order_tree">
+        <field name="name">view.europastry.order.tree</field>
+        <field name="model">europastry.pedido</field>
+        <field name="type">tree</field>
+        <field name="arch" type="xml">
+
+            <tree string="Pedidos Europastry a importar" >
+                    <field name="fichero_import"/>
+                    <field name="cod_dist"/>
+                    <field name="n_pedido_eurp"/>
+                    <field name="tip_ped"/>
+                    <field name="cod_cli"/>
+                    <field name="nom_cli"/>
+                    <field name="raz_social"/>
+                    <field name="cp"/>
+                    <field name="provincia"/>
+                    <field name="num_ped_cli"/>
+                    <field name="fecha_intro"/>
+                    <field name="fecha_entrega_t"/>
+                    <field name="obser"/>
+                    <field name="cod_articulo"/>
+                    <field name="cod_ean_articulo"/>
+                    <field name="cantidad"/>
+                    <field name="unidad_med"/>
+                    <field name="obsequio"/>
+                    <field name="promo"/>
+                    <field name="excepcion"/>
+                    <field name="procesada"/>
+                    
+            </tree>
+        </field>
+    </record>
+
+    <record id="europastry_import_control" model="ir.actions.act_window">
+      <field name="name">Importar Pedidos de Europastry </field>
+      <field name="res_model">europastry.pedido</field>
+      <field name="domain">[('procesada','=',False)]</field>
+      <field name="view_type">tree</field>
+      <field name="view_mode">tree</field>
+      
+    </record>
+
+   
+    
+    <menuitem 
+        id="europastry_import_orders"
+        name="Europastry Import Orders"
+        parent="base.menu_base_partner" 
+        sequence="10"/>
+    
+ 
+    <menuitem 
+        id="europastry_importar_pedido" 
+        name="Importar de Europastry" 
+        parent="europastry_import_orders"
+        action="europastry_import_control"
+        sequence="10" 
+        />
+
+        <record id="europastry_view_order_form" model="ir.ui.view">
+            <field name="name">europastry.view_order_form</field>
+            <field name="model">sale.order</field>
+            <field name="inherit_id" ref="sale.view_order_form"/>
+            <field name="arch" type="xml">                
+                <notebook position="inside" >
+                    <page string="Europastry" >
+                        <group>
+                            <field name ="is_europastry"/>
+                            <field name ="europastry_pick"/>
+                            <field name ="europastry_order"/>   
+                            <field name ="fecha_intro"/>
+                            <field name ="fecha_entrega_t"/> 
+                            <field name ="tip_ped"/>
+                            <field name ="num_ped_cli"/> 
+                            <field name ="promo"/>
+                            <field name ="motivo_no_ent"/>                       
+                        </group>
+                    </page>
+                </notebook>                
+            </field>
+        </record>
+
+        <record id="europastry_view_picking_form" model="ir.ui.view">
+            <field name="name">europastry.view_picking_form</field>
+            <field name="model">stock.picking</field>
+            <field name="inherit_id" ref="stock.view_picking_form"/>
+            <field name="arch" type="xml">                
+                <notebook position="inside" >
+                    <page string="Europastry" >
+                        <group>
+                            <field name ="is_europastry"/>
+                            <field name ="europastry_pick"/>
+                            <field name ="europastry_order"/>   
+                            <field name ="fecha_intro"/>
+                            <field name ="fecha_entrega_t"/> 
+                            <field name ="tip_ped"/>
+                            <field name ="num_ped_cli"/>  
+                            <field name ="promo"/>
+                            <field name ="motivo_no_ent"/>                      
+                        </group>
+                    </page>
+                </notebook>                
+            </field>
+        </record>
+   
+    </data>
+ 
+        
+</openerp>
