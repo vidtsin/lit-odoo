@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+        <record id="hielos_export_entregas_europastry_cron" model="ir.cron">
+            <field name="name">Europastry Entregas Export</field>
+            <field name="user_id" ref="base.user_root"/>
+            <field name="interval_number">1</field>
+            <field name="interval_type">days</field>
+            <field name="numbercall">0</field>
+            <field eval="False" name="doall"/>
+            <field eval="'europastry.sync'" name="model" />
+            <field eval="'export_entregas_europ'" name="function"/>
+        </record>
+        <record id="hielos_create_entregas_europastry_cron" model="ir.cron">
+            <field name="name">Europastry Create Entregas Export</field>
+            <field name="user_id" ref="base.user_root"/>
+            <field name="interval_number">1</field>
+            <field name="interval_type">days</field>
+            <field name="numbercall">0</field>
+            <field eval="False" name="doall"/>
+            <field eval="'europastry.sync'" name="model" />
+            <field eval="'create_entregas_europ'" name="function"/>
+        </record>
+
+        
+
+        <record id="hielos_seguimiento_europastry_cron" model="ir.cron">
+            <field name="name">Europastry exporta seguimiento</field>
+            <field name="user_id" ref="base.user_root"/>
+            <field name="interval_number">1</field>
+            <field name="interval_type">days</field>
+            <field name="numbercall">0</field>
+            <field eval="False" name="doall"/>
+            <field eval="'europastry.seguimiento'" name="model" />
+            <field eval="'export_seguimiento_europ'" name="function"/>
+        </record>
+
+        <record id="hielos_gen_seguimiento_europastry_cron" model="ir.cron">
+            <field name="name">Europastry genera seguimiento</field>
+            <field name="user_id" ref="base.user_root"/>
+            <field name="interval_number">1</field>
+            <field name="interval_type">days</field>
+            <field name="numbercall">0</field>
+            <field eval="False" name="doall"/>
+            <field eval="'europastry.seguimiento'" name="model" />
+            <field eval="'gen_seguimiento_europ'" name="function"/>
+        </record>
+        
+        <record model="ir.ui.view" id="view_europastry_tree">
+        <field name="name">view.europastry.tree</field>
+        <field name="model">europastry.sync</field>
+        <field name="type">tree</field>
+        <field name="arch" type="xml">
+            <tree string="Europastry a importar" create="true" delete="true" editable="buttom">
+                    <field name="fichero_import"/>
+                    <field name="cod_dist"/>
+                    <field name="cod_cli"/>
+                    <field name="fecha_intro"/>
+                    <field name="cli_euro"/>
+                    <field name="num_alb"/>
+                    <field name="fecha_entrega_t"/>
+                    <field name="fecha_alb"/>
+                    <field name="num_fact"/>
+                    <field name="fecha_fact"/>
+                    <field name="nom_cli"/>
+                    <field name="raz_social"/>
+                    <field name="nif_cif"/>
+                    <field name="direccion"/>
+                    <field name="poblacion"/>
+                    <field name="provincia"/>
+                    <field name="cp"/>
+                    <field name="telef"/>
+                    <field name="fax"/>
+                    <field name="zona_com"/>
+                    <field name="fecha_alta"/>
+                    <field name="cod_articulo"/>
+                    <field name="fab_artic"/>
+                    <field name="cantidad"/>
+                    <field name="unidad_med"/>
+                    <field name="obsequio"/>
+                    <field name="lote"/>
+                    <field name="imp_bruto"/>
+                    <field name="imp_neto"/>
+                    <field name="divisa"/>
+                    <field name="co_promo"/>
+                    <field name="obser"/>
+                    <field name="potencial"/>
+                    <field name="cuota"/>
+                    <field name="competencia"/>
+                    <field name="n_pedido_eurp"/>
+                    <field name="motivo_no_ent"/>
+
+
+                </tree>
+        </field>
+    </record>
+
+    <record id="europastry_leer_control" model="ir.actions.act_window">
+      <field name="name">Leer Pedidos de Europastry </field>
+      <field name="type">ir.actions.act_window</field>
+      <field name="res_model">europastry.sync</field>
+      <field name="domain">[('procesada','=',False)]</field>
+      <field name="view_type">tree</field>
+      <field name="view_mode">tree</field>
+      
+    </record>
+
+   
+    
+    <menuitem 
+        id="europastry_import"
+        name="Europastry Entregas"
+        parent="base.menu_base_partner" 
+        sequence="10"/>
+    
+ 
+    <menuitem 
+        id="europastry_importar" 
+        name="Entregas Europastry" 
+        parent="europastry_import"
+        action="europastry_leer_control"
+        sequence="10" 
+        />
+
+   
+    
+
+    <record model="ir.ui.view" id="view_europastry_seg_tree">
+        <field name="name">view.europastry.seg.tree</field>
+        <field name="model">europastry.seguimiento</field>
+        <field name="type">tree</field>
+        <field name="arch" type="xml">
+            <tree string="Europastry seguimiento" create="true" delete="true" editable="buttom">
+                    
+                    <field name="cod_dist"/>
+                    <field name="n_pedido_eurp"/>
+                    <field name="tip_ped"/>
+                    <field name="cod_cli"/>
+                    <field name="fecha_entrega_s"/>
+                    <field name="fecha_entrega_t"/>
+                    <field name="fecha_entrega_r"/>
+                    <field name="cod_articulo"/>
+                    <field name="cantidad"/>
+                    <field name="unidad_med"/>
+                    <field name="cancelada"/>
+                    <field name="obser"/>
+                    
+                </tree>
+        </field>
+    </record>
+
+    <record id="europastry_seguimiento_control" model="ir.actions.act_window">
+      <field name="name">Seguimiento Pedidos de Europastry </field>
+      <field name="type">ir.actions.act_window</field>
+      <field name="res_model">europastry.seguimiento</field>
+      <field name="domain">[('procesada','=',False)]</field>
+      <field name="view_type">tree</field>
+      <field name="view_mode">tree</field>
+      
+    </record>
+
+   
+    
+    <menuitem 
+        id="europastry_seguimiento"
+        name="Europastry Seguimiento"
+        parent="base.menu_base_partner" 
+        sequence="10"/>
+    
+ 
+    <menuitem 
+        id="europastry_seguimiento_sub" 
+        name="Seguimiento de Europastry" 
+        parent="europastry_seguimiento"
+        action="europastry_seguimiento_control"
+        sequence="10" 
+        />
+   
+    </data>
+ 
+        
+</openerp>

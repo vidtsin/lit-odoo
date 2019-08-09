@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+
+<data noupdate="0">
+
+     <record id="europastry_informe_wizard" model="ir.ui.view">
+
+     <field name="name">europastry.informe.wizard</field>
+
+     <field name="model">europastry.informe</field>
+
+     <field name="arch" type="xml">
+
+     <form string="Informe Europastry">
+
+         <group colspan="4" col="4">
+            <field name="fecha_inicio"/>
+            <field name="fecha_fin"/>
+            
+
+         </group>
+
+         <footer>
+
+         <button string="Print" name="report_europastry_informe" type="object" class="oe_highlight"/>
+
+         <button string="Cancel" special="cancel" class="oe_link"/>
+
+        </footer>
+
+     </form>
+
+     </field>
+
+     </record>
+
+
+
+     <record id="action_wizard_informe_europastry" model="ir.actions.act_window">
+
+     <field name="name">Informe Europastry</field>
+
+     <field name="res_model">europastry.informe</field>
+
+     <field name="view_type">form</field>
+
+     <field name="view_mode">form</field>
+
+     <field name="target">new</field>
+
+    </record>
+<menuitem 
+        id="europastry_informe" 
+        name="Imprimir Informe Europastry" 
+        parent="europastry_import"
+        action="action_wizard_informe_europastry"
+        sequence="11" 
+        />
+
+</data>
+
+</openerp>

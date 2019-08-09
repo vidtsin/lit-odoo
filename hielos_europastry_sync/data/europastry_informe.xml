@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<openerp>
+
+<data>
+
+
+<report
+
+         id = "action_report_europastry_ids"
+
+         model = "europastry.informe"
+
+         string="Informe Europastry"
+
+         report_type = "qweb-pdf"
+
+         file = "hielos_europastry_sync.report_europastry_entrega_ids"
+
+         name = "hielos_europastry_sync.report_europastry_entrega_ids" />
+<report
+
+         id = "report_europastry_entregas"
+
+         model = "europastry.informe"
+
+         string="Informe Europastry trad"
+
+         report_type = "qweb-pdf"
+
+         file = "hielos_europastry_sync.report_europastry_entrega_tmp"
+
+         name = "hielos_europastry_sync.report_europastry_entregas" />
+
+
+
+
+</data>
+
+</openerp>
+
