@@ -30,20 +30,6 @@
         </record>
 -->
 
-#filtros para permitir buscar movimientos de existencias entre fechas previstas segun nuevos campos funcion
-        <record id="stock_move_fromtodate_search" model="ir.ui.view">
-            <field name="name">stock.move.fromtodate.search</field>
-            <field name="model">stock.move</field>
-            <field name="inherit_id" ref="stock.view_move_search"/>
-            <field name="arch" type="xml">
-                <xpath expr="//search" position="inside">
-                    <field name="due_date_to" string="Hasta Dia" filter_domain="[('date','&lt;=',self)]"/>
-                    <field name="due_date_from" string="Desde Dia" filter_domain="[('date','&gt;=',self)]"/>
-                </xpath>
-            </field>
-        </record>
-
-
 #filtros para permitir buscar presupuestos / pedidos entre fechas previstas segun nuevos campos funcion
         <record id="sale_order_fromtodate_filter" model="ir.ui.view">
             <field name="name">sale.order.fromtodate.search</field>
@@ -123,7 +109,6 @@
                 </xpath>
             </field>
         </record>
-
 
   </data>
 </openerp>

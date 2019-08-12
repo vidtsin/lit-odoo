@@ -82,7 +82,7 @@ class SaleOrder(models.Model):
                     lot_count += 1
                     # if counter is 0 or > 1 means that something goes wrong
                     if lot_count != 1:
-                        raise Warning(_('Can\'t retrieve lot on stock'))
+                        raise Warning(_('Can\'t retrieve lot on stock %s')%line.lot_id.name)
         return move
 
     @api.model

@@ -19,8 +19,17 @@ class sale_order(models.Model):
     def onchange_global_discount(self, global_discount):
         for order in self:
             for line in order.order_line:
-                line.discount1 = global_discount
+                line.discount2 = global_discount
         return True
+
+
+class res_partner(models.Model):
+    _inherit = "res.partner"
+
+    customer_discount = fields.Float(
+        'Dto. de Cliente',
+        digits=dp.get_precision('Discount')
+    )
 
 
 class sale_order_line(models.Model):
@@ -87,6 +96,8 @@ class sale_order_line(models.Model):
             uom=False, qty_uos=0, uos=False, name='', partner_id=False,
             lang=False, update_tax=True, date_order=False, packaging=False,
             fiscal_position=False, flag=False):
+
+
         res = super(sale_order_line, self).product_id_change(
             pricelist, product, qty=qty, uom=uom,
             qty_uos=qty_uos, uos=uos, name=name, partner_id=partner_id,
@@ -95,10 +106,19 @@ class sale_order_line(models.Model):
             flag=flag)
 
         result=res['value']
-        #_logger.error('##### AIKO ###### Three discount los valores de res son %s'%result)
+        _logger.error('##### AIKO ###### Three discount los valores de res son %s'%result)
+
         if 'discount' in result and (result['discount']<>0):
             #_logger.error('##### AIKO ###### Three discount tiene un result discount de %s'%result['discount'])
             result['discount1'] = result['discount']
+
+        #agregado el 8-11-16, si se ha marcado un descuento global en el cliente, se lleva a cada linea un discount2
+        _logger.error('##### AIKO ###### Three discount los valores de partner_id son %s'%partner_id)
+        if partner_id:
+            partner_obj = self.env['res.partner']
+            for part in partner_obj.browse(partner_id):
+                if part.customer_discount and part.customer_discount > 0:
+                    result['discount2'] = part.customer_discount
 
         return res
 

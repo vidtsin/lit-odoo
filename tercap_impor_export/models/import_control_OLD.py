@@ -82,6 +82,7 @@ class tercap_route(osv.osv):
         'unico_numero': fields.boolean('Pedidos y Albaranes con mismo identificador'),
         'saldo_cobrables': fields.boolean('Solo exportar cobros si se cobran albaranes'),
         'solo_unidades': fields.boolean('Descartar unidades en cajas'),
+        'lotes_pedido': fields.boolean('Gestionar lote en el pedido'),
         'gestion_descanso': fields.boolean('Gestionar dias de descanso'),
         'num_relleno':fields.float('Relleno del numero', digits=(2,0)),
         }
@@ -95,6 +96,7 @@ class tercap_route(osv.osv):
                  'product_default_idcode': True,
                  'saldo_cobrables': False,
                  'solo_unidades': False,
+                 'lotes_pedido': False,
                  'gestion_descanso': False,
                  'num_relleno': 9,
                  }

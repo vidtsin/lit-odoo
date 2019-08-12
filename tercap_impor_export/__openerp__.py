@@ -37,7 +37,8 @@ Importa Exporta archivos de intercambio entre aplicaciones
     'images': [],
     #si el cliente gestiona el dto por pronto pago cambiar a esta linea comentada
     #'depends': ['account','sale', 'sales_team','sale_quick_payment','sale_early_payment'],
-    'depends': ['account','account_payment_sale', 'account_invoice_sale_link','product','sale', 'sale_journal', 'sale_margin_uom', 'sales_team','sale_stock', 'sale_quick_payment', 'sale_three_discounts'],
+    #14-12-16 nuevo depends 'partner_supplier_ref (de LiderIT) para poder enviar informacion en direccion del codigo proveedor
+    'depends': ['account','account_payment_sale', 'account_invoice_sale_link','product','sale', 'sale_journal', 'sale_margin_uom', 'sales_team','sale_stock', 'sale_quick_payment', 'sale_three_discounts', 'partner_supplier_ref'],
     'data': [
         'security/ir.model.access.csv',
         'security/tercap_security.xml',

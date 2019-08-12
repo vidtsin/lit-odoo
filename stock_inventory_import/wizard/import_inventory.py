@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+# (c) 2015 AvanzOSC
+# License AGPL-3 - See http://www.gnu.org/licenses/agpl-3.0.html
 
 from openerp import fields, models, exceptions, api, _
 import base64
@@ -10,11 +13,12 @@ class ImportInventory(models.TransientModel):
     _description = 'Import inventory'
 
     def _get_default_location(self):
-        ctx = self._context
+        ctx = self.env.context
         if 'active_id' in ctx:
             inventory_obj = self.env['stock.inventory']
             inventory = inventory_obj.browse(ctx['active_id'])
-        return inventory.location_id
+            return inventory.location_id or self.env['stock.location']
+        return False
 
     data = fields.Binary('File', required=True)
     name = fields.Char('Filename')
@@ -23,18 +27,17 @@ class ImportInventory(models.TransientModel):
     location = fields.Many2one('stock.location', 'Default Location',
                                default=_get_default_location, required=True)
 
-    @api.one
+    @api.multi
     def action_import(self):
         """Load Inventory data from the CSV file."""
-        ctx = self._context
+        ctx = self.env.context
         stloc_obj = self.env['stock.location']
         inventory_obj = self.env['stock.inventory']
         inv_imporline_obj = self.env['stock.inventory.import.line']
         product_obj = self.env['product.product']
+        inventory = inventory_obj
         if 'active_id' in ctx:
             inventory = inventory_obj.browse(ctx['active_id'])
-        if not self.data:
-            raise exceptions.Warning(_("You need to select a file!"))
         # Decode the file data
         data = base64.b64decode(self.data)
         file_input = cStringIO.StringIO(data)
@@ -59,11 +62,17 @@ class ImportInventory(models.TransientModel):
                 _("Not 'code' or 'quantity' keys found"))
         del reader_info[0]
         values = {}
-        actual_date = fields.Date.today()
-        inv_name = self.name + ' - ' + actual_date
+        inv_name = u'{} - {}'.format(self.name, fields.Date.today())
         inventory.write({'name': inv_name,
                          'date': fields.Datetime.now(),
-                         'imported': True, 'state': 'confirm'})
+                         'imported': True,
+                         'state': 'confirm',
+                         })
+        lines = {
+            ':'.join([
+                l.code, l.lot and str(l.lot.id) or '',
+                l.location_id and str(l.location_id.id) or '']): l
+            for l in inventory.import_lines}
         for i in range(len(reader_info)):
             val = {}
             field = reader_info[i]
@@ -72,9 +81,12 @@ class ImportInventory(models.TransientModel):
             if 'location' in values and values['location']:
                 locations = stloc_obj.search([('name', '=',
                                                values['location'])])
-                prod_location = locations[:1].id
-            prod_lst = product_obj.search([('default_code', '=',
-                                            values['code'])])
+                if locations:
+                    prod_location = locations[:1].id
+            prod_lst = product_obj.search([
+                '|',
+                ('default_code', '=', values['code']),
+                ('ean13', '=', values['code'])])
             if prod_lst:
                 val['product'] = prod_lst[0].id
             if 'lot' in values and values['lot']:
@@ -85,7 +97,14 @@ class ImportInventory(models.TransientModel):
             val['inventory_id'] = inventory.id
             val['fail'] = True
             val['fail_reason'] = _('No processed')
-            inv_imporline_obj.create(val)
+            if 'standard_price' in values and values['standard_price']:
+                val['standard_price'] = values['standard_price']
+            line_id = ':'.join([
+                values['code'], values.get('lot', ''), str(prod_location)])
+            if line_id in lines:
+                lines[line_id].quantity += float(values['quantity'])
+            else:
+                lines[line_id] = inv_imporline_obj.create(val)
 
 
 class StockInventoryImportLine(models.Model):
@@ -101,3 +120,4 @@ class StockInventoryImportLine(models.Model):
     lot = fields.Char('Product Lot')
     fail = fields.Boolean('Fail')
     fail_reason = fields.Char('Fail Reason')
+    standard_price = fields.Float(string='Cost Price')

@@ -32,7 +32,7 @@ account_invoice_lotnumber
 ====================================
 Incluye el campo de lote en la factura
                     """,
-    "depends" : [
+    "depends" :[
         "account_accountant",
         "sale_stock",
         "stock_picking_invoice_link",

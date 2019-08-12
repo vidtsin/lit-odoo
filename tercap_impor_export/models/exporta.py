@@ -216,7 +216,10 @@ def _create_report72(self, cr, uid, ids, context=None):
 
         #21-3-16 agregamos una sustitucion adicional para evitar el caracter ;
         nombrecomercial = nombrecomercial.replace(";",",")
+        #14-12-16 agrupamos para la direccion los valores de street y street2
         direccion=unicode(line.street.ljust(50)[:50]).replace("\"","\'") if line.street else  ' ' 
+        direccion2=unicode(line.street2.ljust(50)[:50]).replace("\"","\'") if line.street2 else  ' '
+        direccion = (direccion + ' ' + direccion2).ljust(50)[:50]
          #21-3-16 agregamos una sustitucion adicional para evitar el caracter ;
         direccion = direccion.replace(";",",")
         poblacion=line.city.ljust(50)[:50] if line.city else ' '
@@ -240,7 +243,11 @@ def _create_report72(self, cr, uid, ids, context=None):
         codcliealternativo=line.ref.ljust(20)[:20] if line.ref else ' '
         coddiralternativo = ' '
         tipocliente= ' '
-        codigoproveedor='0000'
+        #14-12-16 nuevo posible valor si esta definido un codigo de proveedor
+        if (line.supplier_ref):
+            codigoproveedor= line.supplier_ref.ljust(10)[:10]
+        else:
+            codigoproveedor='0000'
         permitirdevoluciones= line.tercap_permitirdevoluciones if line.tercap_permitirdevoluciones else 'S'
         #nuevo valor 1-8-16 para la ruta por defecto de reparto del cliente
         codrutaentrega = unicode(line.tercap_reparto_id.cod_tercap).zfill(4) if line.tercap_reparto_id else '0000'
@@ -274,7 +281,9 @@ def _create_report72(self, cr, uid, ids, context=None):
 
 
 #13-5-16 y exportamos las que no son clientes pero son direcciones de entrega
-    search_condition = [('active', '=', True),('parent_id','!=', False)]
+#    search_condition = [('active', '=', True),('parent_id','!=', False)]
+#03-10-16 pero solo las que sean del tipo 'delivery', solo interesan direcciones de entrega no de facturacion
+    search_condition = [('active', '=', True),('parent_id','!=', False),('type','=','delivery')]
     part_selec_obj = par_obj.search(cr, uid, search_condition )
 
     for cliente in part_selec_obj:
@@ -296,7 +305,11 @@ def _create_report72(self, cr, uid, ids, context=None):
 
         #21-3-16 agregamos una sustitucion adicional para evitar el caracter ;
         nombrecomercial = nombrecomercial.replace(";",",")
-        direccion=unicode(line.street.ljust(50)[:50]).replace("\"","\'") if line.street else  ' ' 
+        #14-12-16 agrupamos para la direccion los valores de street y street2
+        direccion1=unicode(line.street).replace("\"","\'") if line.street else  ' ' 
+        direccion2=unicode(line.street2).replace("\"","\'") if line.street2 else  ' '
+        direccion =  ' '.join([direccion1, direccion2])
+        direccion = direccion.ljust(50)[:50]
          #21-3-16 agregamos una sustitucion adicional para evitar el caracter ;
         direccion = direccion.replace(";",",")
         poblacion=line.city.ljust(50)[:50] if line.city else ' '
@@ -320,7 +333,11 @@ def _create_report72(self, cr, uid, ids, context=None):
         codcliealternativo=line.ref.ljust(20)[:20] if line.ref else ' '
         coddiralternativo = ' '
         tipocliente= ' '
-        codigoproveedor='0000'
+        #14-12-16 nuevo posible valor si esta definido un codigo de proveedor
+        if (line.supplier_ref):
+            codigoproveedor= line.supplier_ref.ljust(10)[:10]
+        else:
+            codigoproveedor='0000'
         permitirdevoluciones= line.tercap_permitirdevoluciones if line.tercap_permitirdevoluciones else 'S'
         #nuevo valor 1-8-16 para la ruta por defecto de reparto del cliente
         codrutaentrega = unicode(line.tercap_reparto_id.cod_tercap).zfill(4) if line.tercap_reparto_id else '0000'
@@ -387,10 +404,11 @@ def _create_report73(self, cr, uid, ids, context=None):
         #comprobamos que default_code sea un numerico 
         #para no repetir con ids de Odoo limitamos a los 8 primeros valores
         #modificado el 9-9-16 para controlar el tipo de valor a exportar, si es True pasamos como codproducto el default code
-        #y el id lo pasamos en el codprodalternativo (solucion original del 21-3-16)
+        #y el id lo pasamos en el codprodalternativo (solucion original del 21-3-16); si no el default code se comunica como
+        #codprovalternativo, que permite default_code no numéricos y el id de Odoo se transmite en codproducto.
         if codigo_default:
             codproducto= unicode(line.default_code).strip()
-            if (len (codproducto)<9) and (codproducto.isdigit()) and (int(codproducto) < 99999999):
+            if ((line.default_code) and (len (codproducto)<9) and (codproducto.isdigit()) and (int(codproducto) < 99999999)):
                 codproducto= codproducto.zfill(9)
             else:
                 #_logger.error('##### AIKO ###### En 73 productos valor de ref interna no numerico:%s'%codproducto)
@@ -413,13 +431,22 @@ def _create_report73(self, cr, uid, ids, context=None):
         #14-3 modificamos para mostrar la referencia interna en el nombre del producto
         #strproducto =  "["+unicode(line.default_code).strip()+"] " + unicode(line.name).strip()
         #21-3-16 dejamos solo la descripcion, porque la ref interna de haberla va en CodProducto
-        strproducto = unicode(line.name_template).strip()
+        #09-11-16 tenemos que tener en cuenta si hay una descripcion de venta para pasar ese valor como descripcion
+        if line.product_tmpl_id.description_sale:
+            strproducto = unicode(line.product_tmpl_id.description_sale).strip()
+        else:
+            strproducto = unicode(line.name_template).strip()
+
+        
         descripcion= unicode(strproducto.ljust(50)[:50]).replace("\"","\'") if line.name_template else  ' ' 
          #21-3-16 agregamos una sustitucion adicional para evitar el caracter ;
         descripcion = descripcion.replace(";",",")
         unidadventa= line.uom_id.tercap_unit.ljust(10)[:10] if line.uom_id.tercap_unit else  'U' 
         unidadescaja= str(line.tercap_unidadescaja).zfill(9) 
-        codiva= line.taxes_id[0].tercap_codiva if line.taxes_id[0].tercap_codiva else '1'
+        if line.taxes_id:
+            codiva= line.taxes_id[0].tercap_codiva if line.taxes_id[0].tercap_codiva else '1'
+        else:
+            codiva = '1'
         loterequerido= line.tercap_loterequerido if line.tercap_loterequerido else 'N'
         codenvase= str(line.tercap_codenvase_id.tercap_codenvase).zfill(9) if line.tercap_codenvase_id else '0'
         espesovariable= line.tercap_espesovariable if line.tercap_espesovariable else 'N'
@@ -440,6 +467,11 @@ def _create_report73(self, cr, uid, ids, context=None):
         ean13= line.ean13 if line.ean13 else ' '
           
         codproveedor= str(line.seller_ids[0].id).zfill(10) if line.seller_ids else '0'   
+
+        #27-9-16 exportamos informacion de precio minimo y maximo segun version 23 de integracion
+        precio_min = str(line.min_price).zfill(10) if line.min_price else '0'
+        precio_max = str(line.max_price).zfill(10) if line.max_price else '999999'
+
             
         fields_fields_73 = [                   
         codproducto,
@@ -455,7 +487,9 @@ def _create_report73(self, cr, uid, ids, context=None):
         precioventa,
         ean13,
         codprodalternativo.rstrip(),  
-        codproveedor,                     
+        codproveedor,
+        precio_min,
+        precio_max,                     
                               ]
         
         fields_73 = ';'.join(['%s' % one_field for one_field in fields_fields_73])
@@ -576,7 +610,7 @@ def _create_report77(self, cr, uid, ids, context=None):
     #27-4-16 aqui pasamos a enviar los modos de pago en lugar de los plazos de pago
     #par_obj = self.pool.get('account.payment.term')
     par_obj = self.pool.get('payment.mode')
-    search_condition = [('active','=', True)]
+    search_condition = [('active','=', True),('tercap_comunicate','=', True)]
     part_selec_obj = par_obj.search(cr, uid, search_condition)
                                  
 
@@ -758,23 +792,36 @@ def _create_report79(self, cr, uid, ids, context=None):
     prop_selec_obj = prop_obj.search(cr, uid, search_condition)
     version_obj = self.pool.get('product.pricelist.version')
     price_item = self.pool.get('product.pricelist.item')
+    partner_obj = self.pool.get('res.partner')
+
+    #localizamos el directorio de importacion y como tiene definido el valor de product_default_idcode
+    directory_obj = self.pool['tercap.route']
+    search_condition = [('alcance', '=', 'import')]
+    direct_imp_obj = directory_obj.search(cr, uid, search_condition)
+    codigo_default = directory_obj.browse(cr, uid, direct_imp_obj[0]).product_default_idcode
 
     output = ''
     #con esto lo primero que tenemos es la relacion entre tarifas y clientes
     #tenemos que extraer el valor numérico que hay en la cadena despues de la coma
     for pr_list in prop_selec_obj:
-        text_pricelist = prop_obj.browse(cr,uid,pr_list).value_reference
-        price_coma = text_pricelist.find(',')+1
-        text_pricelist = text_pricelist[price_coma:]
-        text_pricelist = int(text_pricelist)
-        #_logger.error('##### AIKO ###### En 79 tarifas encuentro la tarifa:%s'%text_pricelist)
         text_partner = prop_obj.browse(cr,uid,pr_list).res_id
         if (text_partner):
             price_coma = text_partner.find(',')+1
         else:
             continue
         text_partner = text_partner[price_coma:]
+        partner_id = partner_obj.browse(cr, uid, int(text_partner))
         #_logger.error('##### AIKO ###### En 79 tarifas encuentro el partner:%s'%text_partner)
+
+        text_pricelist = prop_obj.browse(cr,uid,pr_list).value_reference
+        if (text_pricelist):
+            price_coma = text_pricelist.find(',')+1
+            text_pricelist = text_pricelist[price_coma:]
+            text_pricelist = int(text_pricelist)
+            #_logger.error('##### AIKO ###### En 79 tarifas encuentro la tarifa:%s'%text_pricelist)
+        else:
+            raise osv.except_osv(('Error!'),('No se ha definido la tarifa de venta para el cliente %s'%partner_id.name))
+        
         #con el dato del product_pricelist buscamos el product_pricelist_version_id
         search_condition = [('pricelist_id','=',text_pricelist)]
         version_obj_sr = version_obj.search(cr,uid,search_condition)
@@ -792,10 +839,19 @@ def _create_report79(self, cr, uid, ids, context=None):
                 line = price_item.browse(cr,uid,prices)
                 cocliente = str(text_partner).zfill(9)
                 #_logger.error('##### AIKO ###### En 79 tarifas encuentro default_code de product:%s'%line.product_id.default_code)
-                if (line.product_id.default_code): 
-                    codproducto = line.product_id.default_code
+                #11-10-16 si se desmarca codigo_default se utiliza el id como identificador de producto
+                if codigo_default==False:
+                    codproducto= str(line.product_id.id).zfill(9)
                 else:
-                    continue
+                    if (line.product_id.default_code)<>'':
+                        codproducto= unicode(line.product_id.default_code).strip()
+                        if (len (codproducto)<9) and (codproducto.isdigit()) and (int(codproducto) < 99999999):
+                            codproducto= codproducto.zfill(9)
+                        else:
+                            codproducto= 900000000 + (line.product_id.id)
+                    else:
+                        codproducto= 900000000 + (line.product_id.id)
+
                 
                 if desdef:
                     fechainicio = desdef
@@ -816,6 +872,8 @@ def _create_report79(self, cr, uid, ids, context=None):
                     if abs(line.price_discount)==1:
                         continue
                     valor = float(line.price_discount) * (-100)
+                else:
+                    continue
 
                 codclialt =''
                 codprovalt=''
@@ -855,16 +913,16 @@ def _create_report710(self, cr, uid, ids, context=None):
     version_obj = self.pool.get('product.pricelist.version')
     price_item = self.pool.get('product.pricelist.item')
     partner_obj = self.pool.get('res.partner')
+    #localizamos el directorio de importacion y como tiene definido el valor de product_default_idcode
+    directory_obj = self.pool['tercap.route']
+    search_condition = [('alcance', '=', 'import')]
+    direct_imp_obj = directory_obj.search(cr, uid, search_condition)
+    codigo_default = directory_obj.browse(cr, uid, direct_imp_obj[0]).product_default_idcode
 
     output = ''
     #con esto lo primero que tenemos es la relacion entre tarifas y clientes
     #tenemos que extraer el valor numérico que hay en la cadena despues de la coma
     for pr_list in prop_selec_obj:
-        text_pricelist = prop_obj.browse(cr,uid,pr_list).value_reference
-        price_coma = text_pricelist.find(',')+1
-        text_pricelist = text_pricelist[price_coma:]
-        text_pricelist = int(text_pricelist)
-        #_logger.error('##### AIKO ###### En 710 tarifas encuentro la tarifa:%s'%text_pricelist)
         text_partner = prop_obj.browse(cr,uid,pr_list).res_id
         if (text_partner):
             price_coma = text_partner.find(',')+1
@@ -873,6 +931,17 @@ def _create_report710(self, cr, uid, ids, context=None):
         text_partner = text_partner[price_coma:]
         partner_id = partner_obj.browse(cr, uid, int(text_partner))
         #_logger.error('##### AIKO ###### En 710 tarifas encuentro el partner:%s'%text_partner)
+
+        text_pricelist = prop_obj.browse(cr,uid,pr_list).value_reference
+        if (text_pricelist):
+            price_coma = text_pricelist.find(',')+1
+            text_pricelist = text_pricelist[price_coma:]
+            text_pricelist = int(text_pricelist)
+            #_logger.error('##### AIKO ###### En 710 tarifas encuentro la tarifa:%s'%text_pricelist)
+        else:
+            raise osv.except_osv(('Error!'),('No se ha definido la tarifa de venta para el cliente %s'%partner_id.name))
+
+        
         #caso improbable: una direccion de entrega no debe tener una tarifa especial, no registramos este dato
         if partner_id.parent_id:
             continue
@@ -896,14 +965,18 @@ def _create_report710(self, cr, uid, ids, context=None):
                 codireccion = cocliente
 
                 #_logger.error('##### AIKO ###### En 710 tarifas encuentro default_code de product:%s'%line.product_id.default_code)
-                if (line.product_id.default_code)<>'':
-                    codproducto= unicode(line.product_id.default_code).strip()
-                    if (len (codproducto)<9) and (codproducto.isdigit()) and (int(codproducto) < 99999999):
-                        codproducto= codproducto.zfill(9)
+                #11-10-16 si esta desmarcada la opción de default code identificativo, como codproducto sera siempre el id
+                if codigo_default==False:
+                    codproducto= str(line.product_id.id).zfill(9)
+                else:
+                    if (line.product_id.default_code)<>'':
+                        codproducto= unicode(line.product_id.default_code).strip()
+                        if (len (codproducto)<9) and (codproducto.isdigit()) and (int(codproducto) < 99999999):
+                            codproducto= codproducto.zfill(9)
+                        else:
+                            codproducto= 900000000 + (line.product_id.id)
                     else:
                         codproducto= 900000000 + (line.product_id.id)
-                else:
-                    codproducto= 900000000 + (line.product_id.id)
                 
                 if desdef:
                     fechainicio = desdef
@@ -925,6 +998,8 @@ def _create_report710(self, cr, uid, ids, context=None):
                         valor = float(line.price_surcharge)
                     else:
                         continue
+                else:
+                    continue
 
                 codclialt =''
                 coddiralt =''
@@ -1713,36 +1788,64 @@ def _create_report726(self, cr, uid, ids, context=None):
     #product_obj = self.pool.get('product.product')   
 
     ''' 
+
     #modificado el 7-6-16 para que muestre el stock real de cada producto a la venta
     output = ''
-    product_obj = self.pool.get('product.template')
+    #detectado el 20-10-16 pasa el id del template cuando el product se identifica con el id de product
+    product_obj = self.pool.get('product.product')
+    tmpl_obj = self.pool.get('product.template')
     search_condition =[('sale_ok','=',True)]
     product_vta = product_obj.search(cr, uid, search_condition)
     codproducto = 0
 
+    #ampliado el 9-9-16 para controlar el tipo de codigo de producto al exportar
+    #localizamos el directorio de importacion y como tiene definido el valor de product_default_idcode
+    directory_obj = self.pool['tercap.route']
+    search_condition = [('alcance', '=', 'import')]
+    direct_imp_obj = directory_obj.search(cr, uid, search_condition)
+    codigo_default = directory_obj.browse(cr, uid, direct_imp_obj[0]).product_default_idcode
+
     for pr in product_vta:
         product_brw = product_obj.browse(cr, uid, pr)
+        #detectado el 20-10-16 pasa el id del template cuando el product se identifica con el id de product
+        search_condition = [('id', '=', product_brw.product_tmpl_id.id)]
+        product_tmpl = tmpl_obj.search(cr, uid, search_condition)
+        if len (product_tmpl)==0:
+            raise osv.except_osv(('Error!'),('No se encuentra identificador en stock para el producto %s'%product_brw.product_tmpl_id))
 
-        if not product_brw.default_code:
-            #si no tiene default_code enviamos el id sumando 900 000 000 para que no se repitan con default_code
-            codproducto= 900000000 + int(float(product_brw.id))
-            #_logger.error('##### AIKO ###### En 726 stockR entero de id product sin default_code:%s'%int(float(product_brw.id)))
-            #_logger.error('##### AIKO ###### En 726 stockR codproducto sin default_code:%s'%codproducto)
-        else:
-            codproducto= unicode(product_brw.default_code).strip()
-            if (len (codproducto)<9) and (codproducto.isdigit()) and (int(codproducto) < 99999999):
-                #_logger.error('##### AIKO ###### En 726 stockR valor de ref interna entero:%s'%codproducto)
-                codproducto= codproducto.zfill(9)
-            else:
-                #_logger.error('##### AIKO ###### En 726 stockR valor de ref interna no numerico:%s'%codproducto)
-                #si no es un numero enviamos el id sumando 900 000 000 para que no se repitan con default_code
+        #modificado el 9-9-16 para controlar el tipo de valor a exportar, si es True pasamos como codproducto el default code
+        #si no se comunica el id de Odoo
+        if codigo_default:
+            if not product_brw.default_code:
+                #si no tiene default_code enviamos el id sumando 900 000 000 para que no se repitan con default_code
                 codproducto= 900000000 + int(float(product_brw.id))
-                #_logger.error('##### AIKO ###### En 726 stockR valor de ref interna no numerico queda en:%s'%codproducto)
+                #_logger.error('##### AIKO ###### En 726 stockR entero de id product sin default_code:%s'%int(float(product_brw.id)))
+                #_logger.error('##### AIKO ###### En 726 stockR codproducto sin default_code:%s'%codproducto)
+            else:
+                codproducto= unicode(product_brw.default_code).strip()
+                if (len (codproducto)<9) and (codproducto.isdigit()) and (int(codproducto) < 99999999):
+                    #_logger.error('##### AIKO ###### En 726 stockR valor de ref interna entero:%s'%codproducto)
+                    codproducto= codproducto.zfill(9)
+                else:
+                    #_logger.error('##### AIKO ###### En 726 stockR valor de ref interna no numerico:%s'%codproducto)
+                    #si no es un numero enviamos el id sumando 900 000 000 para que no se repitan con default_code
+                    codproducto= 900000000 + int(float(product_brw.id))
+                    #_logger.error('##### AIKO ###### En 726 stockR valor de ref interna no numerico queda en:%s'%codproducto)
+        #modificacion del 9-9-16: si no esta marcado vamos a enviar en codproducto el id de Odoo.
+        else:
+            codproducto= str(product_brw.id).zfill(9)
+
+        #detectado el 20-10-16 pasa el id del template cuando el product se identifica con el id de product
+        prod_tmpl = tmpl_obj.browse(cr, uid, product_tmpl[0])
         
         codruta ='99'
         lote=''
-        cantidad = product_brw.qty_available
-        pesototal = product_brw.weight * cantidad
+        #detectado el 20-10-16 pasa el id del template cuando el product se identifica con el id de product
+        #cantidad = product_brw.qty_available
+        #pesototal = product_brw.weight * cantidad
+        cantidad = prod_tmpl.qty_available
+        pesototal = prod_tmpl.weight * cantidad
+
         fecha = datetime.date.today().strftime('%Y-%m-%d')
         codvendedor= '0'
 
@@ -1778,33 +1881,59 @@ def _create_report726V(self, cr, uid, ids, context=None):
 
     #modificado el 24-6-16 para que muestre el stock virtual de cada producto a la venta
     output = ''
-    product_obj = self.pool.get('product.template')
+    #detectado el 20-10-16 pasa el id del template cuando el product se identifica con el id de product
+    product_obj = self.pool.get('product.product')
+    tmpl_obj = self.pool.get('product.template')
     search_condition =[('sale_ok','=',True)]
     product_vta = product_obj.search(cr, uid, search_condition)
 
+    #ampliado el 9-9-16 para controlar el tipo de codigo de producto al exportar
+    #localizamos el directorio de importacion y como tiene definido el valor de product_default_idcode
+    directory_obj = self.pool['tercap.route']
+    search_condition = [('alcance', '=', 'import')]
+    direct_imp_obj = directory_obj.search(cr, uid, search_condition)
+    codigo_default = directory_obj.browse(cr, uid, direct_imp_obj[0]).product_default_idcode
+
     for pr in product_vta:
         product_brw = product_obj.browse(cr, uid, pr)
-        
-        if not product_brw.default_code:
-            #si no tiene default_code enviamos el id sumando 900 000 000 para que no se repitan con default_code
-            codproducto= 900000000 + int(float(product_brw.id))
-            _logger.error('##### AIKO ###### En 726 stockV entero de id product sin default_code:%s'%int(float(product_brw.id)))
-            _logger.error('##### AIKO ###### En 726 stockV codproducto sin default_code:%s'%codproducto)
-        else:
-            codproducto= unicode(product_brw.default_code).strip()
-            if (len (codproducto)<9) and (codproducto.isdigit()) and (int(codproducto) < 99999999):
-                _logger.error('##### AIKO ###### En 726 stockV valor de ref interna entero:%s'%codproducto)
-                codproducto= codproducto.zfill(9)
-            else:
-                _logger.error('##### AIKO ###### En 726 stockV valor de ref interna no numerico:%s'%codproducto)
-                #si no es un numero enviamos el id sumando 900 000 000 para que no se repitan con default_code
+        #detectado el 20-10-16 pasa el id del template cuando el product se identifica con el id de product
+        search_condition = [('id', '=', product_brw.product_tmpl_id.id)]
+        product_tmpl = tmpl_obj.search(cr, uid, search_condition)
+        if len (product_tmpl)==0:
+            raise osv.except_osv(('Error!'),('No se encuentra identificador en stock para el producto %s'%product_brw.product_tmpl_id))
+
+        #modificado el 9-9-16 para controlar el tipo de valor a exportar, si es True pasamos como codproducto el default code
+        #si no se comunica el id de Odoo
+        if codigo_default:
+            if not product_brw.default_code:
+                #si no tiene default_code enviamos el id sumando 900 000 000 para que no se repitan con default_code
                 codproducto= 900000000 + int(float(product_brw.id))
-                _logger.error('##### AIKO ###### En 726 stockV valor de ref interna no numerico queda en:%s'%codproducto)
+                #_logger.error('##### AIKO ###### En 726 stockR entero de id product sin default_code:%s'%int(float(product_brw.id)))
+                #_logger.error('##### AIKO ###### En 726 stockR codproducto sin default_code:%s'%codproducto)
+            else:
+                codproducto= unicode(product_brw.default_code).strip()
+                if (len (codproducto)<9) and (codproducto.isdigit()) and (int(codproducto) < 99999999):
+                    #_logger.error('##### AIKO ###### En 726 stockR valor de ref interna entero:%s'%codproducto)
+                    codproducto= codproducto.zfill(9)
+                else:
+                    #_logger.error('##### AIKO ###### En 726 stockR valor de ref interna no numerico:%s'%codproducto)
+                    #si no es un numero enviamos el id sumando 900 000 000 para que no se repitan con default_code
+                    codproducto= 900000000 + int(float(product_brw.id))
+                    #_logger.error('##### AIKO ###### En 726 stockR valor de ref interna no numerico queda en:%s'%codproducto)
+        #modificacion del 9-9-16: si no esta marcado vamos a enviar en codproducto el id de Odoo.
+        else:
+            codproducto= str(product_brw.id).zfill(9)
         
+        #detectado el 20-10-16 pasa el id del template cuando el product se identifica con el id de product
+        prod_tmpl = tmpl_obj.browse(cr, uid, product_tmpl[0])
+
         codruta ='99'
         lote=''
-        cantidad = product_brw.virtual_available
-        pesototal = product_brw.weight * cantidad
+        #cantidad = product_brw.virtual_available
+        #pesototal = product_brw.weight * cantidad
+        cantidad = prod_tmpl.virtual_available
+        pesototal = prod_tmpl.weight * cantidad
+        
         fecha = datetime.date.today().strftime('%Y-%m-%d')
         codvendedor= '0'
 
@@ -1822,6 +1951,98 @@ def _create_report726V(self, cr, uid, ids, context=None):
         fields_726 = ';'.join(['%s' % one_field for one_field in fields_fields_726])
         output += fields_726.encode('CP1252') + '\n'
 #            output += sale_invoice + '\n'
+        
+    filename = '/var/ftp/ERP/STOCK'
+    formato = 'txt'
+    nombre = "%s.%s" % (filename, formato)
+    #out = base64.encodestring(output)
+    outfile = open(nombre, 'w')
+    outfile.write(output)
+    outfile.close()
+    return
+
+    #================== 726Lote Stock  para Lotes ==========================creado el 09-11-16
+def _create_report726L(self, cr, uid, ids, context=None):
+    if context is None:
+        context = {}
+
+    #creado el 09-11-16 para obtener simplemente un listado de todos los productos con sus lotes y 
+    #existencias en stock hipoteticas de 1000 uds: supone que no hay control de stocks.
+    output = ''
+    #detectado el 20-10-16 pasa el id del template cuando el product se identifica con el id de product
+    product_obj = self.pool.get('product.product')
+    tmpl_obj = self.pool.get('product.template')
+    search_condition = [('active', '=', True),('tercap_product','=', True),('sale_ok','=', True)]
+    product_vta = product_obj.search(cr, uid, search_condition)
+
+    #ampliado el 9-9-16 para controlar el tipo de codigo de producto al exportar
+    #localizamos el directorio de importacion y como tiene definido el valor de product_default_idcode
+    directory_obj = self.pool['tercap.route']
+    search_condition = [('alcance', '=', 'import')]
+    direct_imp_obj = directory_obj.search(cr, uid, search_condition)
+    codigo_default = directory_obj.browse(cr, uid, direct_imp_obj[0]).product_default_idcode
+
+    #para los lotes necesitamos un objeto mas:
+    lots_obj = self.pool['stock.production.lot']
+
+    for pr in product_vta:
+        product_brw = product_obj.browse(cr, uid, pr)
+        #detectado el 20-10-16 pasa el id del template cuando el product se identifica con el id de product
+        search_condition = [('id', '=', product_brw.product_tmpl_id.id)]
+        product_tmpl = tmpl_obj.search(cr, uid, search_condition)
+        if len (product_tmpl)==0:
+            raise osv.except_osv(('Error!'),('No se encuentra identificador en stock para el producto %s'%product_brw.product_tmpl_id))
+
+        #modificado el 9-9-16 para controlar el tipo de valor a exportar, si es True pasamos como codproducto el default code
+        #si no se comunica el id de Odoo
+        if codigo_default:
+            if not product_brw.default_code:
+                #si no tiene default_code enviamos el id sumando 900 000 000 para que no se repitan con default_code
+                codproducto= 900000000 + int(float(product_brw.id))
+                #_logger.error('##### AIKO ###### En 726 stockR entero de id product sin default_code:%s'%int(float(product_brw.id)))
+                #_logger.error('##### AIKO ###### En 726 stockR codproducto sin default_code:%s'%codproducto)
+            else:
+                codproducto= unicode(product_brw.default_code).strip()
+                if (len (codproducto)<9) and (codproducto.isdigit()) and (int(codproducto) < 99999999):
+                    #_logger.error('##### AIKO ###### En 726 stockR valor de ref interna entero:%s'%codproducto)
+                    codproducto= codproducto.zfill(9)
+                else:
+                    #_logger.error('##### AIKO ###### En 726 stockR valor de ref interna no numerico:%s'%codproducto)
+                    #si no es un numero enviamos el id sumando 900 000 000 para que no se repitan con default_code
+                    codproducto= 900000000 + int(float(product_brw.id))
+                    #_logger.error('##### AIKO ###### En 726 stockR valor de ref interna no numerico queda en:%s'%codproducto)
+        #modificacion del 9-9-16: si no esta marcado vamos a enviar en codproducto el id de Odoo.
+        else:
+            codproducto= str(product_brw.id).zfill(9)
+
+        codruta ='99'
+        cantidad = '1000.000'
+        pesototal = '1000.000'
+        fecha = datetime.date.today().strftime('%Y-%m-%d')
+        codvendedor= '0'
+
+        #09-11-16 para cada producto repetimos todos los lotes
+        search_condition = [('product_id', '=', product_brw.id)]
+        lot_prod = lots_obj.search(cr, uid, search_condition)
+
+        for lt in lot_prod:
+            lt_brw = lots_obj.browse(cr, uid, lt)
+            lote=lt_brw.name
+
+
+            fields_fields_726L = [
+            codruta,
+            codproducto, 
+            lote,
+            cantidad,
+            pesototal,
+            fecha,
+            codvendedor,
+            ]
+
+            #_logger.error('##### AIKO ###### En 726V stock registro valores:%s'%fields_fields_726)     
+            fields_726L = ';'.join(['%s' % one_field for one_field in fields_fields_726L])
+            output += fields_726L.encode('CP1252') + '\n'
         
     filename = '/var/ftp/ERP/STOCK'
     formato = 'txt'

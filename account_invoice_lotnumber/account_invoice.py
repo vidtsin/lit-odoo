@@ -36,6 +36,7 @@ class AccountInvoiceLine(models.Model):
             self.prod_lot_ids = self.mapped(
                 'order_lines.procurement_ids.move_ids.lot_ids')
 
+
     order_lines = fields.Many2many(
         'sale.order.line', 'sale_order_line_invoice_rel', 'invoice_id',
         'order_line_id', 'Order Lines', readonly=True)
@@ -43,3 +44,5 @@ class AccountInvoiceLine(models.Model):
     prod_lot_ids = fields.Many2many(
         'stock.production.lot',  'stock_prod_lot_invoice_rel', 'invoice_id',
         compute='_get_prod_lots', string="Production Lots")
+
+    

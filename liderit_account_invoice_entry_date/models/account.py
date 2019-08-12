@@ -41,7 +41,6 @@ class AccountInvoice(models.Model):
         help="Keep empty to use the current date",
         copy=False)
 
-
     def action_move_create(self, cr, uid, ids, context=None):
 
         if not context:

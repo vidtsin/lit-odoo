@@ -32,8 +32,10 @@ sale_by_supplier
 ====================================
 Show sales by supplier of sold products
                     """,
-    "depends" : ['sale_margin_uom','product_supplierinfo_for_customer'],
-    "data" : ['views/sale_by_supplier_view.xml'
+    "depends" : [],
+    "data" : [
+        'views/sale_by_supplier_view.xml',
+        'security/ir.model.access.csv'
         ],
     "demo" : [],
     "installable": True,

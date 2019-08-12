@@ -8,10 +8,16 @@
             <field name="inherit_id" ref="account.view_account_invoice_filter"/>
             <field name="arch" type="xml">
                 <group string="Group By" position="inside">
-                    <filter string="Por tipo" context="{'group_by':'type'}"/>               
+                    <filter name="type" string="Por tipo" context="{'group_by':'type'}"/>               
                 </group>
             </field>
         </record>
+    
+
+        <record id="account.action_invoice_refund_out_tree" model="ir.actions.act_window"> 
+           <field name="context">{'type':'out_invoice','search_default_type':1}</field>
+        </record>
+
     </data>
 
 </openerp>

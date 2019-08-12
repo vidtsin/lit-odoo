@@ -22,6 +22,18 @@
 from openerp.osv import fields, osv
 
 class stock_picking(osv.osv):
+    _inherit = 'account.move.line'
+
+    _columns = {
+        'due_date_from': fields.function(
+            lambda *a,**k:{}, method=True, type='date', string='Desde Fecha'
+        ),
+        'due_date_to': fields.function(
+            lambda *a,**k:{}, method=True, type='date', string='Hasta Fecha'
+        ),
+    }
+
+class stock_picking(osv.osv):
     _inherit = 'stock.picking'
 
     _columns = {
@@ -31,18 +43,6 @@ class stock_picking(osv.osv):
     	'due_date_to': fields.function(
     	    lambda *a,**k:{}, method=True, type='date', string='Hasta Fecha'
     	),
-    }
-
-class stock_move(osv.osv):
-    _inherit = 'stock.move'
-
-    _columns = {
-        'due_date_from': fields.function(
-            lambda *a,**k:{}, method=True, type='date', string='Desde Fecha'
-        ),
-        'due_date_to': fields.function(
-            lambda *a,**k:{}, method=True, type='date', string='Hasta Fecha'
-        ),
     }
 
 class sale_order(osv.osv):
@@ -81,7 +81,7 @@ class account_invoice(osv.osv):
         ),
     }
 
-class account_move_line(osv.osv):
+class account_imove_line(osv.osv):
     _inherit = 'account.move.line'
 
     _columns = {
@@ -104,21 +104,5 @@ class account_voucher(osv.osv):
             lambda *a,**k:{}, method=True, type='date', string='Hasta Fecha'
         ),
     }
-
-
-# en nueva api ej. con mrp repair
-
-# class mrp_repair(models.Model):
-#     _inherit = ['mrp.repair']
-
-
-#     def _get_date_filter(self):
-#         return lambda *a,**k:{}
-
-
-#     date_from = fields.Date(compute='_get_date_filter', string = 'Desde Fecha')
-#     date_to = fields.Date(compute='_get_date_filter', string = 'Hasta Fecha')
-
-
 
 # vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:

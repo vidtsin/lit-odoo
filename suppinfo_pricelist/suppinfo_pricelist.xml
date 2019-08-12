@@ -8,19 +8,16 @@
                 <tree string="Partnerinfo" editable="top">
                     <field name="product_tmpl_id" readonly="1" string="Producto"/>
                     <field name="min_quantity" />
-                    <field name="price" string="Compra Bruto"/>
-                    <field name="net_price" string="Compra Neto"/>
-                    <field name="product_uom_po" string="Unidad Compra"/>
-                    <field name="product_cost" string="Coste"/>
-                    <field name="product_pricelist" string="PVP Lista"/>
+                    <field name="price" />
                     <field name="partner" readonly="1" string="Proveedor"/>
                     <field name="sequence" readonly="1" />
+                    <field name="name" />
                     <!--field name="suppinfo_id" /-->
                     <!--field name="product_code" readonly="1" />
                     <field name="product_name" readonly="1" /-->
                     <field name="company_id" groups="base.group_multi_company"
                         invisible="1" />
-                    <field name="type"/>
+                    <field name="type" invisible="1" />
                 </tree>
             </field>
         </record>
@@ -38,14 +35,10 @@
                     <!--field name="product_code" /-->
 
 
-                     <filter string="De Compra" domain="[('type','=','supplier')]"
-                            name="show_only_supplier" />
-
-
                     <group expand="0" string="Group By">
                         <filter string="Proveedor" icon="terp-partner"
                             domain="[]" context="{'group_by':'partner'}" />
-                        <filter string="Proveedor" domain="[]"
+                        <filter string="Producto" domain="[]"
                             name="group_product_tmpl_id" context="{'group_by':'product_tmpl_id'}" />
                         <separator />
                         <!--filter string="Type" domain="[]"
@@ -64,7 +57,6 @@
             <field name="res_model">pricelist.partnerinfo</field>
             <field name="view_mode">tree,form</field>
             <field name="search_view_id" ref="pricelist_partnerinfo_search_view" />
-            <field name="context">{"search_default_show_only_supplier":1}</field>
             <!--field name="domain">[]</field>
             <field name="context">{}
             </field-->

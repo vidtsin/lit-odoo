@@ -73,6 +73,7 @@
                   <field name="unico_numero"/>
                   <field name="saldo_cobrables"/>
                   <field name="solo_unidades"/>
+                  <field name="lotes_pedido"/>
                   <field name="gestion_descanso"/>
                   <field name="num_relleno"/>
                 </group>

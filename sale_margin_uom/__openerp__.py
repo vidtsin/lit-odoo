@@ -6,12 +6,11 @@
 {
     'name': 'Sale Margin with uom',
     'version': '1.0',
-    'author': 'LiderIT',
+    'author': '',
     'category': 'Sale',
-    'depends': [
-        'sale',
-        'product',
+     'depends': [
+        'sale_margin',
     ],
-    'data':['sale_margin_view.xml'],
+   
     'installable': True
 }

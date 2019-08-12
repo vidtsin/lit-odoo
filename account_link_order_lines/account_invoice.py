@@ -28,7 +28,7 @@ class AccountInvoiceLine(models.Model):
 
     order_lines = fields.Many2many(
         'sale.order.line', 'sale_order_line_invoice_rel', 'invoice_id',
-        'order_line_id', 'Order Lines', readonly= True)
+        'order_line_id', 'Order Lines', readonly=True)
 
 
     

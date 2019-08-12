@@ -43,6 +43,7 @@ class sale_order_line(osv.osv):
 			prod_cust_search = prod_cust_code.search(cr,uid,search_condition)
 			if len(prod_cust_search)>0:
 				prod_cust_id = prod_cust_code.browse(cr,uid,prod_cust_search[0])
-				res['value']['name'] = prod_cust_id.product_code +' '+ product_obj.name
+				#res['value']['name'] = prod_cust_id.product_code +' '+ product_obj.name
+				res['value']['name'] = prod_cust_id.product_code
 
 		return res

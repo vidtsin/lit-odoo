@@ -298,6 +298,8 @@ def carga_datos_clientes (self, cr, uid, ids, ruta, file, context=None):
                 #line[11] = Telefono
                 #line[12] = DiaDescanso del cliente
                 #line[13] = CodRutaEntrega : la ruta de reparto asignada por defecto al cliente
+                #novedad version 23 del 27-9-16:
+                #line[14] = CodFormaPagoERP : Forma de pago del cliente segun codigos del ERP
 
                 #19-4-16 si esta marcado en la ruta que no se importen clientes sin cif(potenciales)
                 if ruta_obj.cif_partner and (line[5]=='0'):
@@ -407,6 +409,17 @@ def carga_datos_clientes (self, cr, uid, ids, ruta, file, context=None):
                         if (len(rutaT_selec_obj)!=0):
                             #_logger.error('##### AIKO ###### Nuevo cliente buscando encontrado reparto:%s'%rutaT_selec_obj[0])
                             values['tercap_reparto_id'] = rutaT_selec_obj[0]
+
+                #27-9-16 puede venir valor de la forma de pago del cliente
+                if len (line) > 14:
+                    if int(float(line[14]))!=0:
+                        #buscamos el id de la forma de pago que corresponde con el codigo recibido
+                        #_logger.error('##### AIKO ###### Nuevo cliente buscando forma de pago:%s'%line[14])
+                        search_condition = [('active', '=', True),('id','=', int(float(line[14])))]
+                        pago_selec_obj = modop_obj.search(cr, uid, search_condition )
+                        if (len(pago_selec_obj)!=0):
+                            #_logger.error('##### AIKO ###### Nuevo cliente buscando encontrado forma de pago:%s'%pago_selec_obj[0])
+                            values['customer_payment_mode'] = pago_selec_obj[0]
 
 
                 #_logger.error('##### AIKO ###### Nuevo cliente a crear con estos valores:%s'%values)
@@ -558,7 +571,7 @@ def comprueba_cliente (self, cr, uid, cod_cliente, context=None):
 
 
 
-def genera_factura (self, cr, uid, sale_id, date_order, numfactura, cobro, total, context=None):
+def genera_factura (self, cr, uid, sale_id, date_order, numfactura, cobro, total, pago, context=None):
     ids = []
     ids.append (sale_id)
     #_logger.error('##### AIKO ###### Genera_factura envia el dato de sale order %s'%ids)
@@ -571,6 +584,7 @@ def genera_factura (self, cr, uid, sale_id, date_order, numfactura, cobro, total
     journal_obj = self.pool.get('account.journal')
     voucher_obj = self.pool.get('account.voucher')
     voucher_line_obj = self.pool.get('account.voucher.line')
+    account_obj = self.pool.get('account.account')
 
     for id in ids:
         sale_obj_id = sale_obj.browse(cr,uid,id)
@@ -594,9 +608,13 @@ def genera_factura (self, cr, uid, sale_id, date_order, numfactura, cobro, total
         sale_ids=[]
         sale_ids.append (id)
         valfac['sale_ids'] = [(6, 0, sale_ids)]
+        #21-12-16 agregamos el modo de pago en la factura
+        if pago!=0:
+            valfac['payment_mode_id'] = pago
         #_logger.error('##### AIKO ###### Genera_factura valores para factura %s'%valfac)
 
         new_invoice_id = invoice_obj.create(cr,SUPERUSER_ID,valfac,context=None)
+        #_logger.error('##### AIKO ###### Genera_factura resultado de crear factura %s'%new_invoice_id)
 
         if(new_invoice_id):
             search_condition = [('order_id','=',id)]
@@ -609,10 +627,17 @@ def genera_factura (self, cr, uid, sale_id, date_order, numfactura, cobro, total
                 vallines['origin'] = sale_obj_id.name
                 vallines['uos_id'] = sl_ln_ob.product_uom.id
                 vallines['product_id'] = sl_ln_ob.product_id.id
-                if (sl_ln_ob.product_id.property_account_income):
-                    vallines['acccount_id'] = sl_ln_ob.product_id.property_account_income.id
+                # 15-6-17 por si no hay un producto asociado (en devoluciones por ejemplo)
+                if (sl_ln_ob.product_id):
+                    if (sl_ln_ob.product_id.property_account_income):
+                        vallines['acccount_id'] = sl_ln_ob.product_id.property_account_income.id
+                    else:
+                        vallines['account_id'] = sl_ln_ob.product_id.categ_id.property_account_income_categ.id
                 else:
-                    vallines['account_id'] = sl_ln_ob.product_id.categ_id.property_account_income_categ.id
+                    search_condition = [('code','like','608%'),('type','!=','view')]
+                    account_id = account_obj.search(cr, uid, search_condition)
+                    vallines['account_id'] = account_id[0]
+
                 vallines['price_unit'] = sl_ln_ob.price_unit
                 vallines['quantity'] = sl_ln_ob.product_uom_qty
                 vallines['discount1'] = sl_ln_ob.discount
@@ -623,31 +648,36 @@ def genera_factura (self, cr, uid, sale_id, date_order, numfactura, cobro, total
                     taxes.append (tax.id)
                 vallines['invoice_line_tax_id'] = [(6, 0, taxes)]
                 #_logger.error('##### AIKO ###### Genera_factura valores para linea %s'%vallines)
-                inv_line_obj.create(cr,SUPERUSER_ID,vallines,context=None)
-        invoice_obj.button_compute(cr,uid,[new_invoice_id],context=context,set_total=True)
-        invoice_obj.action_move_create(cr,uid,[new_invoice_id],context=context)
+                new_inv_line_id = inv_line_obj.create(cr,SUPERUSER_ID,vallines,context=None)
+                asocia_lineas_factura (self,cr,uid,new_inv_line_id,il)
+
+        invoice_obj.button_compute(cr,SUPERUSER_ID,[new_invoice_id],context=context,set_total=True)
+        invoice_obj.action_move_create(cr,SUPERUSER_ID,[new_invoice_id],context=context)
         #invoice_obj.action_number(cr,uid,new_invoice_id,context=context)
-        invoice_obj.invoice_validate(cr,uid,[new_invoice_id],context=context)
+        invoice_obj.invoice_validate(cr,SUPERUSER_ID,[new_invoice_id],context=context)
 
         # add the invoice to the sales order's invoices and state as done
         valsinv={}
         valsinv['invoice_ids'] = (4, new_invoice_id)
         valsinv['state'] = 'done'
-        asoc = sale_obj.write(cr, uid, sale_id, valsinv, context=context)
+        asoc = sale_obj.write(cr, SUPERUSER_ID, sale_id, valsinv, context=context)
         #_logger.error('##### AIKO ###### Genera_factura asociar a factura nos da %s'%asoc)
 
 
         #queda pendiente recibir un cobro si hay importe cobrado de la factura y registrar el pago
-        invoice = invoice_obj.browse(cr,uid,new_invoice_id)
+        invoice = invoice_obj.browse(cr,SUPERUSER_ID,new_invoice_id)
         if cobro > 0:
             #lo primero ajustamos el pago, si es completo al importe de la factura para evitar diferencias de centimos
+            cobroaj = 0
             if cobro == total:
-                cobro = invoice.residual
+                cobroaj = invoice.residual
+            else:
+                cobroaj = cobro
 
             #generamos un recibo voucher con valores
-            new_voucher_id = voucher.crea_voucher(self, cr, uid, new_invoice_id, cobro, context=context)
+            new_voucher_id = voucher.crea_voucher(self, cr, uid, new_invoice_id, cobroaj, context=context)
             #registramos las lineas de ese recibo
-            voucher.crea_lineas_voucher(self, cr, uid, new_invoice_id, cobro, new_voucher_id, context=context)
+            voucher.crea_lineas_voucher(self, cr, uid, new_invoice_id, cobroaj, new_voucher_id, context=context)
 
             #con el nuevo voucher creado registramos el pago de la factura
             voucher_brw = voucher_obj.browse(cr,uid,new_voucher_id)
@@ -656,12 +686,137 @@ def genera_factura (self, cr, uid, sale_id, date_order, numfactura, cobro, total
 
             #si el importe del pago es el total damos por pagada la factura
             if cobro == total:
-                invoice_obj.write(cr,uid,new_invoice_id,{'state':'paid'},context=None)
+                invoice_obj.write(cr,SUPERUSER_ID,new_invoice_id,{'state':'paid'},context=None)
 
         
     #_logger.error('##### AIKO ###### Genera_factura obtiene al final el dato %s'%new_invoice_id)
             
+
+def genera_rectificativa (self, cr, uid, sale_id, date_order, numfactura, cobro, total, pago, context=None):
+    ids = []
+    ids.append (sale_id)
+    #_logger.error('##### AIKO ###### Genera_factura envia el dato de sale order %s'%ids)
+
+    
+    sale_obj = self.pool.get('sale.order')
+    sale_line_obj = self.pool.get('sale.order.line')
+    invoice_obj = self.pool.get('account.invoice')
+    inv_line_obj = self.pool.get('account.invoice.line')
+    journal_obj = self.pool.get('account.journal')
+    voucher_obj = self.pool.get('account.voucher')
+    voucher_line_obj = self.pool.get('account.voucher.line')
+    account_obj = self.pool.get('account.account')
+
+    for id in ids:
+        sale_obj_id = sale_obj.browse(cr,uid,id)
+        valfac ={}
+        valfac['partner_id'] = sale_obj_id.partner_id.id
+        #if (sale_obj_id.partner_id.tax_ids):
+        #    valfac['fiscal_position'] = sale_obj_id.partner_id.tax_ids.id
+        valfac['account_id'] = sale_obj_id.partner_id.property_account_receivable.id
+        #_logger.error('##### AIKO ###### Genera_factura valor de ruta de cliente %s'%sale_obj_id.partner_id.tercap_ruta_id)
+        #_logger.error('##### AIKO ###### Genera_factura valor de journal %s'%sale_obj_id.partner_id.tercap_ruta_id.journal_id.id)
+        if (sale_obj_id.partner_id.tercap_ruta_id.journal_id.id):
+            valfac['journal_id'] = sale_obj_id.partner_id.tercap_ruta_id.journal_id.id
+        valfac['origin'] = sale_obj_id.name
+        valfac['reference'] = sale_obj_id.name
+        valfac['number'] = numfactura
+        valfac['internal_number'] = numfactura
+        valfac['invoice_number'] = numfactura
+        valfac['date_invoice'] = date_order
+        if (sale_obj_id.partner_id.property_account_position):
+            valfac['fiscal_position'] = sale_obj_id.partner_id.property_account_position.id
+        sale_ids=[]
+        sale_ids.append (id)
+        valfac['sale_ids'] = [(6, 0, sale_ids)]
+        valfac['type']='out_refund'
+        #21-12-16 agregamos el modo de pago en la factura
+        if pago!=0:
+            valfac['payment_mode_id'] = pago
+        #_logger.error('##### AIKO ###### Genera_factura valores para factura %s'%valfac)
+
+        new_invoice_id = invoice_obj.create(cr,SUPERUSER_ID,valfac,context=None)
+        #_logger.error('##### AIKO ###### Genera_factura resultado de crear factura %s'%new_invoice_id)
+
+        if(new_invoice_id):
+            search_condition = [('order_id','=',id)]
+            inv_lines = sale_line_obj.search(cr,uid,search_condition)
+            for il in inv_lines:
+                sl_ln_ob = sale_line_obj.browse(cr,uid,il)
+                vallines = {}
+                vallines['invoice_id'] = new_invoice_id
+                vallines['name'] = sl_ln_ob.name
+                vallines['origin'] = sale_obj_id.name
+                vallines['uos_id'] = sl_ln_ob.product_uom.id
+                vallines['product_id'] = sl_ln_ob.product_id.id
+                # 15-6-17 por si no hay un producto asociado (en devoluciones por ejemplo)
+                if (sl_ln_ob.product_id):
+                    if (sl_ln_ob.product_id.property_account_income):
+                        vallines['acccount_id'] = sl_ln_ob.product_id.property_account_income.id
+                    else:
+                        vallines['account_id'] = sl_ln_ob.product_id.categ_id.property_account_income_categ.id
+                else:
+                    search_condition = [('code','like','608%'),('type','!=','view')]
+                    account_id = account_obj.search(cr, uid, search_condition)
+                    vallines['account_id'] = account_id[0]
+
+                vallines['price_unit'] = sl_ln_ob.price_unit
+                if sl_ln_ob.product_uom_qty < 0:
+                    vallines['quantity'] = sl_ln_ob.product_uom_qty * -1
+                else:
+                    vallines['quantity'] = sl_ln_ob.product_uom_qty
+                vallines['discount1'] = sl_ln_ob.discount
+                vallines['discount'] = sl_ln_ob.discount
+                vallines['partner_id'] = sale_obj_id.partner_id.id
+                taxes=[]
+                for tax in sl_ln_ob.tax_id:
+                    taxes.append (tax.id)
+                vallines['invoice_line_tax_id'] = [(6, 0, taxes)]
+                #_logger.error('##### AIKO ###### Genera_factura valores para linea %s'%vallines)
+                new_inv_line_id = inv_line_obj.create(cr,SUPERUSER_ID,vallines,context=None)
+                asocia_lineas_factura (self,cr,uid,new_inv_line_id,il)
+
+        invoice_obj.button_compute(cr,SUPERUSER_ID,[new_invoice_id],context=context,set_total=True)
+        invoice_obj.action_move_create(cr,SUPERUSER_ID,[new_invoice_id],context=context)
+        #invoice_obj.action_number(cr,uid,new_invoice_id,context=context)
+        invoice_obj.invoice_validate(cr,SUPERUSER_ID,[new_invoice_id],context=context)
+
+        # add the invoice to the sales order's invoices and state as done
+        valsinv={}
+        valsinv['invoice_ids'] = (4, new_invoice_id)
+        valsinv['state'] = 'done'
+        asoc = sale_obj.write(cr, SUPERUSER_ID, sale_id, valsinv, context=context)
+        #_logger.error('##### AIKO ###### Genera_factura asociar a factura nos da %s'%asoc)
+
+
+        #queda pendiente recibir un cobro si hay importe cobrado de la factura y registrar el pago
+        invoice = invoice_obj.browse(cr,SUPERUSER_ID,new_invoice_id)
+        if cobro > 0:
+            #lo primero ajustamos el pago, si es completo al importe de la factura para evitar diferencias de centimos
+            cobroaj = 0
+            if cobro == total:
+                cobroaj = invoice.residual
+            else:
+                cobroaj = cobro
+
+            #generamos un recibo voucher con valores
+            new_voucher_id = voucher.crea_voucher(self, cr, uid, new_invoice_id, cobroaj, context=context)
+            #registramos las lineas de ese recibo
+            voucher.crea_lineas_voucher(self, cr, uid, new_invoice_id, cobroaj, new_voucher_id, context=context)
+
+            #con el nuevo voucher creado registramos el pago de la factura
+            voucher_brw = voucher_obj.browse(cr,uid,new_voucher_id)
+            #_logger.error('##### AIKO ###### Genera_factura valor del voucher a conciliar %s'%voucher_brw)
+            voucher_brw.signal_workflow("proforma_voucher")
+
+            #si el importe del pago es el total damos por pagada la factura
+            if cobro == total:
+                invoice_obj.write(cr,SUPERUSER_ID,new_invoice_id,{'state':'paid'},context=None)
+
         
+    #_logger.error('##### AIKO ###### Genera_factura obtiene al final el dato %s'%new_invoice_id)
+
+
 def carga_datos_docs (self, cr, uid, ids, ruta, file, context=None):
     #paramos esta comprobacion al principio para hacerla en cada linea y decidir si se carga o no el pedido
     '''
@@ -672,7 +827,9 @@ def carga_datos_docs (self, cr, uid, ids, ruta, file, context=None):
     '''
 
     posicion_obj = self.pool.get('account.fiscal.position')
-    pago_obj = self.pool.get('account.payment.term')
+    #pago_obj = self.pool.get('account.payment.term')
+    #21-12-16 se cambia por el modo de pago:
+    pago_obj = self.pool.get('payment.mode')
     eqvtas_obj = self.pool.get('crm.case.section') 
     user = self.pool["res.users"].browse(cr, uid, uid)
     pedido_obj = self.pool.get('sale.order')
@@ -692,7 +849,7 @@ def carga_datos_docs (self, cr, uid, ids, ruta, file, context=None):
     if (len(journal_obj_id)==0):
         raise osv.except_osv(('Error!'),('No se ha definido un diario para el registro de cobros de Tercap. Revise la configuración')) 
 
-    
+
     os.chdir(ruta)
     for nombre in glob.glob(file):   
         f = open(nombre,'rU') 
@@ -702,7 +859,7 @@ def carga_datos_docs (self, cr, uid, ids, ruta, file, context=None):
         for line in c:
             if line:
 
-                _logger.error('##### AIKO ###### Entro en carga_datos_docs para el fichero %s'%file)
+                #_logger.error('##### AIKO ###### Entro en carga_datos_docs para el fichero %s'%file)
                 
                 #line [0] = NumDocumento
                 #line [1] = FechaDocumento
@@ -774,7 +931,7 @@ def carga_datos_docs (self, cr, uid, ids, ruta, file, context=None):
                 #    if (len(cambia_doc)>0):
                 #        es_nuevo = 1
 
-                if ter_tipodoc == 8 or (ter_tipodoc == 0 and es_nuevo == 0) or (ter_tipodoc == 1 and es_nuevo == 0):
+                if ter_tipodoc == 8 or (ter_tipodoc == 0 and es_nuevo == 0) or (ter_tipodoc == 1 and es_nuevo == 0) or (ter_tipodoc == 3 and es_nuevo == 0):
                     #_logger.error('##### AIKO ###### En carga datos DOCS cumple tipo 8 o tipo 0 y 1 en nuevos docs')
                     values = {}    
                     #el pedido lo ponemos en estado enviado para luego lanzar el proceso de aceptacion de estos pedidos   
@@ -798,6 +955,9 @@ def carga_datos_docs (self, cr, uid, ids, ruta, file, context=None):
                             #13-7-16 usamos tf porque al comparar la cadena las minusculas tienen un Ascci mas alto, asi no hay problemas
                             #con las series que pueda estar usando Odoo en sus facturas y no da problemas de fechas al emitir la factura
                             name_pedido = 'tf-'+line[3]+line[0].zfill(relleno)
+                        #18-9-17 para gestionar facturas rectificativas
+                        elif (ter_tipodoc == 3):
+                            name_pedido = 'tfr-'+line[3]+line[0].zfill(relleno)
                         else:#si no sera un pedido lo creamos como PT pedido Tercap
                             name_pedido = 'PT-'+line[3]+line[0].zfill(relleno)
                     else:
@@ -805,6 +965,8 @@ def carga_datos_docs (self, cr, uid, ids, ruta, file, context=None):
                             name_pedido = 'AT-'+line[0].zfill(relleno)
                         elif (ter_tipodoc == 1):#si es una factura primero creamos el pedido como tf factura Tercap
                             name_pedido = 'tf-'+line[0].zfill(relleno)
+                        elif (ter_tipodoc == 3):#si es una factura rectificativa primero creamos el pedido como tfr factura Tercap
+                            name_pedido = 'tfr-'+line[0].zfill(relleno)
                         else:#si no sera un pedido lo creamos como PT pedido Tercap
                             name_pedido = 'PT-'+line[0].zfill(relleno)
                     #CONTROL PARA NO RECIBIR UN PEDIDO CON NUMERO YA REGISTRADO
@@ -845,7 +1007,12 @@ def carga_datos_docs (self, cr, uid, ids, ruta, file, context=None):
                     eqvtas_selec_obj = eqvtas_obj.search(cr, uid, search_condition )            
                     for eqvtas in eqvtas_selec_obj:
                         values['section_id'] = eqvtas
-                        continue
+                        #continue
+                        #17-11-16 modificado para asociar el comercial al pedido
+                        eqvtas_brw = eqvtas_obj.browse(cr, uid, eqvtas)
+                        #_logger.error('##### AIKO ###### En carga datos DOCS se obtiene comercial:%s'%eqvtas_brw.user_id.id)
+                        if eqvtas_brw.user_id:
+                            values['user_id'] = eqvtas_brw.user_id.id
 
                     #24-2-16 desde esta fecha se agrega una opcion de busqueda en clientes
                     #para poder registrar pedidos de nuevos clientes
@@ -893,8 +1060,8 @@ def carga_datos_docs (self, cr, uid, ids, ruta, file, context=None):
                             continue
                     values['amount_total'] = ter_totaldoc
 
-                     #parado mientras no se asegure una actualizacion de datos: de momento ignora el cambio de plazo de pago de Tercap
-                    '''
+                    #la variable modo de pago la pasamos a la factura
+                    pago=0
                     if (line[28]):
                         search_condition = [('active', '=', True),('id','=', ter_paytermid)]
                         pago_selec_obj = pago_obj.search(cr, uid, search_condition )            
@@ -902,8 +1069,6 @@ def carga_datos_docs (self, cr, uid, ids, ruta, file, context=None):
                             #values['payment_term'] = pago
                             values['payment_mode_id'] = pago
                             continue
-                    '''
-                    
                     #para tratar el descuento por pronto pago si esta instalado el modulo
                     #sale-early_payment, comentado de momento hasta su uso: se pasa como un dto normal a la linea
                     #values['early_payment_discount']=ter_dtopp
@@ -937,7 +1102,7 @@ def carga_datos_docs (self, cr, uid, ids, ruta, file, context=None):
                     #16-5-16 por si el campo de descuento se pasa tambien dtopp:
                     #01-08-16 tenemos que pasar el id_cliente por si hay que registrar un precio de promocion
                     tiene_lineas = carga_datos_lineas(self, cr, uid, values['partner_id'], ter_numdoc, ter_tipodoc, order_id, ruta, ficlineas,ter_dto,ter_dtopp,name_pedido, ter_direntrega, context=None)
-                    _logger.error('##### AIKO ###### En carga datos DOCS tiene_lineas con valor %s'%tiene_lineas)
+                    #_logger.error('##### AIKO ###### En carga datos DOCS tiene_lineas con valor %s'%tiene_lineas)
                     #01-08-16 si tiene lineas nos comunico nueva tarifa no podemos cargar el fichero hasta que exista la tarifa
                     if (tiene_lineas == 99):
                         #no se pueden registrar precios si la tarifa no esta creada: habria que leer primero el fichero
@@ -961,6 +1126,7 @@ def carga_datos_docs (self, cr, uid, ids, ruta, file, context=None):
                     #3-5-16 si esta marcado en el directorio de importacion
                     if (tercapruta_obj.pedido_borrador==False):
                         retconf = self.pool.get('sale.order').action_button_confirm(cr, uid, order_id, context=context)
+                        #_logger.error('##### AIKO ###### En carga datos DOCS al confirmar se obtiene %s'%retconf)
                         #3-5-16 buscamos el albaran generado y reescribimos su numero para que sea igual que el del pedido
                         #siempre que este asi marcado en el directorio de importacion
                         if (retconf and tercapruta_obj.unico_numero):
@@ -970,7 +1136,7 @@ def carga_datos_docs (self, cr, uid, ids, ruta, file, context=None):
                         albaranar_pedido (self, cr, uid, name_pedido, context=None)
 
                     #1-3-16 gestionamos cobros en pedidos o albaranes, para eso tenemos que crear un objeto pay.sale.order
-                    if (ter_tipodoc != 1 and ter_cobrado>0):
+                    if (ter_tipodoc != 1 and ter_tipodoc != 3 and ter_cobrado>0):
                         #22-3-16 localizado problema con decimales en albaranes (pedidos)
                         #al ser un campo calculado no tenemos forma de reescribirlo
                         #pero al menos si esta pagado entero dejamos el pendiente a cero para que no queden pendiente 1 centimo
@@ -983,13 +1149,23 @@ def carga_datos_docs (self, cr, uid, ids, ruta, file, context=None):
                             registrar_cobro (self, cr, uid, ter_numdoc, ter_cobrado, journal_obj_id, order_id, 'False', context=None)
                     #y seguimos para facturas: tendremos el albaran y hay que facturarlo
                     if (ter_tipodoc == 1) and not tercapruta_obj.todo_pedidos and not tercapruta_obj.pedido_borrador:
-                        #_logger.error('##### AIKO ###### Entro en emision de factura para el pedido: %s'%order_id)
+                        #_logger.error('##### AIKO ###### En carga datos DOCS entro en emision de factura para el pedido: %s'%order_id)
                         if (line[3]): 
                             numfactura = 'tf-'+unicode(line[3])+unicode(line[0]).zfill(relleno)
                         else:
                             numfactura = 'tf-'+unicode(line[0]).zfill(relleno)
                         #pasamos el dato de cobro, por si es necesario registrar un pago
-                        genera_factura(self, cr, uid, order_id, ter_dateorder, numfactura, ter_cobrado, ter_totaldoc, context=None)
+                        genera_factura(self, cr, uid, order_id, ter_dateorder, numfactura, ter_cobrado, ter_totaldoc, pago, context=None)
+
+                    #y ahora para facturas rectificativas: tendremos el albaran y hay que facturarlo
+                    if (ter_tipodoc == 3) and not tercapruta_obj.todo_pedidos and not tercapruta_obj.pedido_borrador:
+                        #_logger.error('##### AIKO ###### En carga datos DOCS entro en emision de factura para el pedido: %s'%order_id)
+                        if (line[3]): 
+                            numfactura = 'tfr-'+unicode(line[3])+unicode(line[0]).zfill(relleno)
+                        else:
+                            numfactura = 'tfr-'+unicode(line[0]).zfill(relleno)
+                        #pasamos el dato de cobro, por si es necesario registrar un pago
+                        genera_rectificativa(self, cr, uid, order_id, ter_dateorder, numfactura, ter_cobrado, ter_totaldoc, pago, context=None)
                     
 
         f.close()
@@ -1054,12 +1230,17 @@ def carga_datos_lineas(self, cr, uid, partner_id, numdoc, tipodoc, order_id, rut
     product_lists = self.pool.get('product.pricelist')
     version_obj = self.pool.get('product.pricelist.version')
     price_item = self.pool.get('product.pricelist.item')
+    ter_ruta = self.pool.get('tercap.route').browse (cr,uid,1)
 
     user = self.pool['res.users'].browse(cr, uid, uid)
 
     #9-9-16: localizamos el directorio y como tiene definido el valor de product_default_idcode
     directory_obj = self.pool.get('tercap.route').browse (cr,uid,1)
     codigo_default = directory_obj.product_default_idcode
+
+    #11-11-16: para incluir tratamiento de lotes que se comunican desde Tercap
+    #necesitamos el objeto stock_production_lot para localizar el lote con ese nombre para el producto
+    lote_obj = self.pool.get('stock.production.lot')
     
     os.chdir(ruta)
     for nombre in glob.glob(file):
@@ -1077,12 +1258,12 @@ def carga_datos_lineas(self, cr, uid, partner_id, numdoc, tipodoc, order_id, rut
                 #lines [4] = TipoLinea: 1=venta, 2=regalo, 4=retirada mercancia
                 #
                 #lines [5] = CodProducto; este no se usa, es uno interno de Tercap
-                #modificado el 9-9-16: ahora contiene el identificador del producto
-                #lines [5] = CodProducto: es el id en Odoo del producto
+                #modificado el 9-9-16: ahora puede contener el identificador del producto
+                #lines [5] = CodProducto: puede ser el id en Odoo del producto
 
                 #lines [6] = Descripcion
                 #lines [7] = Unidad Venta (U, Kg, C)
-                #lines [8] = Lote; no se trata
+                #lines [8] = Lote
                 #lines [9] = Cantidad
                 #lines [10] = Cajas
                 #lines [11] = Peso Unidad; no se trata
@@ -1115,6 +1296,7 @@ def carga_datos_lineas(self, cr, uid, partner_id, numdoc, tipodoc, order_id, rut
                 ter_tipodoclin = int(float(lines[2]))if lines[2] else  ' '
                 ter_numlinea = int(float(lines[3]))if lines[3] else  '10'
                 ter_tipolinea = int(float(lines[4]))if lines[4] else  '1'
+                #_logger.error('##### AIKO ###### En carga datos LINEAS valor para ter_tipolinea:%s'%ter_tipolinea)
                 #21-31-16 el id nos llega ahora en CodProvAlternativo: campo 22
                 #ter_codproducto = int(float(lines[5]))if lines[5] else  '0'
                 #_logger.error('##### AIKO ###### En carga datos LINEAS valor para descripcion:%s'%lines[6])
@@ -1125,6 +1307,11 @@ def carga_datos_lineas(self, cr, uid, partner_id, numdoc, tipodoc, order_id, rut
                     ter_codproducto = int(float(lines[22]))if lines[22] else  '0'
                 else:
                     ter_codproducto = int(float(lines[5]))if lines[5] else  '0'
+                #11-11-16: incluir tratamiento de lotes que se comunican desde Tercap
+                #buscar en stock_production_lot para el producto el lote con ese nombre
+                #e incluirlo en la linea de venta en el campo lot_id, suponemos que no se repite el nombre de lote
+                ter_lote = ustr(lines[8]) if lines[8] else  '0'
+
                 ter_cantidad = float(lines[9])if lines[9] else  '0'
                 ter_cajas = int(float(lines[10]))if lines[10] else  '0'
                 ter_kilos = int(float(lines[12]))if lines[12] else  '0'
@@ -1140,7 +1327,7 @@ def carga_datos_lineas(self, cr, uid, partner_id, numdoc, tipodoc, order_id, rut
 
                 #tenemos que filtrar por numero de documento y tipo de documento igual que el de origen
                 if ter_tipodoclin == tipodoc and ter_numdoc == numdoc:
-                    #_logger.error('##### AIKO ###### En carga datos LINEAS registro linea coincidentes: %s'%numdoc)
+                    _logger.error('##### AIKO ###### En carga datos LINEAS registro linea coincidentes: %s'%numdoc)
                     
                     values = {}
                     #el pedido lo ponemos en estado borrador para luego lanzar el proceso de aceptacion de estos pedidos
@@ -1174,6 +1361,10 @@ def carga_datos_lineas(self, cr, uid, partner_id, numdoc, tipodoc, order_id, rut
                         #tenemos que prevenir las devoluciones con unidades en negativo
                         #si es negativo no usamos el product_id, solo descripcion modificada
                         if (ter_cantidad<0):
+                            # 18-9-17: nuevo funcionamiento de las lineas de abono: utilizamos un productos creado al efecto, para tener el dato del albaran de entrega
+                            if ter_ruta.product_dev_id:
+                                values['product_id'] = ter_ruta.product_dev_id.id
+
                             values['name'] = 'Devolucion de '+ ter_descripcion 
                         else:
                             values['product_id'] = ter_codproducto
@@ -1244,8 +1435,10 @@ def carga_datos_lineas(self, cr, uid, partner_id, numdoc, tipodoc, order_id, rut
                         #    values['product_uom_qty'] = ter_cajas*(-1)
                         else:
                             #si son Kg como unidades cogemos el peso total, si son unidades, las unidades
+                            #esto lo paramos hasta ver como llega un archivo con kilos
                             if (lines[7]=='KG'):
-                                values['product_uom_qty'] = ter_kilos
+                                #values['product_uom_qty'] = ter_kilos
+                                values['product_uom_qty'] = ter_cantidad
                             else:
                                 values['product_uom_qty'] = ter_cantidad
 
@@ -1306,9 +1499,40 @@ def carga_datos_lineas(self, cr, uid, partner_id, numdoc, tipodoc, order_id, rut
 
                         #21-3-16 si hay lineas de devolucion ponemos res a 1
                         if (ter_tipolinea==4):
+                            
                             res = 1
+                        else:
+                            res = -99
                         #29-4-16 tenemos que registrar tb el product_uos_qty igual al product_uom_qty
                         values['product_uos_qty'] = values['product_uom_qty']
+
+                        #11-11-16: incluir tratamiento de lotes que se comunican desde Tercap
+                        #buscar en stock_production_lot para el producto el lote con ese nombre
+                        #e incluirlo en la linea de venta en el campo lot_id si se marca en el directorio
+                        if (inv_names.lotes_pedido):
+                            new_lote_id = 0
+                            #si Tercap envía 0 en el campo lote, creamos un lote '0000' y usamos ese lote
+                            _logger.error('##### AIKO ###### En carga datos LINEAS valor ter_lote %s'%ter_lote)
+                            if int(ter_lote)==0:
+                                _logger.error('##### AIKO ###### En carga datos LINEAS valor sin lote fijado %s'%ter_lote)
+                                ter_lote = '0000'
+                            
+                            search_condition = [('product_id', '=', ter_codproducto),('name', 'ilike', ter_lote)]
+                            lote_id = lote_obj.search(cr, uid, search_condition)
+                            if len(lote_id)==0:
+                                _logger.error('##### AIKO ###### En carga datos LINEAS no se encuentra lote_id para %s'%ter_lote)
+                                _logger.error('##### AIKO ###### En carga datos LINEAS no se encuentra product_id %s'%ter_codproducto)
+                                #hay que crear un lote para el producto con el nombre recibido
+                                new_lote_id = crear_lote (self, cr, SUPERUSER_ID, ter_codproducto, ter_lote, context=None)
+                                
+                            # novedad del 15-06-2017 si la cantidad es negativa no registramos lote para evitar problemas en albaranes
+                            _logger.error('##### AIKO ###### En carga datos LINEAS valor de res es %s'%res)
+                            if (res!=1):
+                                if (new_lote_id==0) :
+                                    values['lot_id'] = lote_id[0]
+                                else:
+                                    values['lot_id'] = new_lote_id
+                                _logger.error('##### AIKO ###### En carga datos LINEAS valor lote_id %s'%values['lot_id'])
 
                         #01/08/16 puede venir nuevo valor con la ruta de reparto
                         if len(lines)>26:
@@ -1344,24 +1568,24 @@ def carga_datos_lineas(self, cr, uid, partner_id, numdoc, tipodoc, order_id, rut
                                                 hastaf = datetime.strptime(version_obj_dates.date_end, '%Y-%m-%d')
                                             else:
                                                 hastaf = datetime.now()
-                                            _logger.error('##### AIKO ###### En carga datos LINEAS valor desdef %s'%desdef)
-                                            _logger.error('##### AIKO ###### En carga datos LINEAS valor hastaf %s'%hastaf)
-                                            _logger.error('##### AIKO ###### En carga datos LINEAS valor hoy %s'%hoy)
+                                            #_logger.error('##### AIKO ###### En carga datos LINEAS valor desdef %s'%desdef)
+                                            #_logger.error('##### AIKO ###### En carga datos LINEAS valor hastaf %s'%hastaf)
+                                            #_logger.error('##### AIKO ###### En carga datos LINEAS valor hoy %s'%hoy)
                                             if desdef <= hoy and hastaf >= hoy:
                                                 #recogemos que al menos una version esta activa
                                                 active_version = 0
                                                 #buscamos ahora en items con el id de la version y el id del producto y con price_surcharge
                                                 search_condition = [('price_version_id','=',version),('product_id','=',ter_codproducto)]
-                                                _logger.error('##### AIKO ###### En carga datos LINEAS condicion de precio con valores %s'%search_condition)
+                                                #_logger.error('##### AIKO ###### En carga datos LINEAS condicion de precio con valores %s'%search_condition)
                                                 price_item_obj = price_item.search(cr,uid,search_condition)
                                                 #nos queda el caso de que no hay un valor y tenemos que registrar un nuevo precio de promocion
                                                 if len(price_item_obj)==0:
-                                                    _logger.error('##### AIKO ###### En carga datos LINEAS encontrado promocion para registrar nuevo precio CON TARIFA')
+                                                    #_logger.error('##### AIKO ###### En carga datos LINEAS encontrado promocion para registrar nuevo precio CON TARIFA')
                                                     #caso A: existe una version de tarifa vigente para el cliente
                                                     crear_item_tarifa (self, cr, uid, version, ter_codproducto, ter_precioneto, context=None)
                                                 else:
                                                     for prices in price_item_obj:
-                                                        _logger.error('##### AIKO ###### En carga datos LINEAS encontrado promocion para modificar:%s'%prices)
+                                                        #_logger.error('##### AIKO ###### En carga datos LINEAS encontrado promocion para modificar:%s'%prices)
                                                         #editamos el valor de esta fila para registrar el nuevo precio neto como precio promocion
                                                         #y anulamos cualquier otra referencia de descuento, cantidad minima, margenes, etc.
                                                         valsitem={}
@@ -1371,7 +1595,7 @@ def carga_datos_lineas(self, cr, uid, partner_id, numdoc, tipodoc, order_id, rut
                                                         valsitem['price_min_margin'] = 0
                                                         valsitem['price_max_margin'] = 0
                                                         valsitem['min_quantity'] = 0
-                                                        price_item.write(cr,uid,prices,valsitem,context=context)
+                                                        price_item.write(cr,SUPERUSER_ID,prices,valsitem,context=context)
                                     
                                 if active_version == -1:
                                     #si llegamos aqui con valor -1, no hay version activa para este cliente
@@ -1384,7 +1608,8 @@ def carga_datos_lineas(self, cr, uid, partner_id, numdoc, tipodoc, order_id, rut
                         msg_txt = 'Error de producto: Una linea del pedido '+numdoc+' contiene un producto no codificado. No se puede realizar la importación del fichero. Modifique el pedido en Tercap.'
                         raise osv.except_osv(('Error!'),(msg_txt))
   
-                    #_logger.error('##### AIKO ###### En carga datos LINEAS se obtiene la lista de valores:%s'%values)
+                    _logger.error('##### AIKO ###### En carga datos LINEAS se obtiene la lista de valores:%s'%values)
+                    _logger.error('##### AIKO ###### En carga datos LINEAS el valor de res es:%s'%res)
                     pedido_obj_id = pedido_obj.create(cr,SUPERUSER_ID,values,context=None) 
 
                     #21-3-16 la linea es de tipo 4 (devoluciones) tenemos que generar un movimiento de almacen de esas unidades
@@ -1393,10 +1618,16 @@ def carga_datos_lineas(self, cr, uid, partner_id, numdoc, tipodoc, order_id, rut
                     #if (ter_cantidad < 0):
                     #    qty_devol = ter_cantidad * (-1)
                     #    retornar_pedido (self, cr, uid, ter_codproducto, ter_descripcion, qty_devol, valor_uom_id, name_pedido, ter_direntrega, context=None)     
+                else:
+                    #si no coinciden los datos de una linea la despreciamos y seguimos leyendo el fichero
+                    continue
+                    #res = 0
             else:
+                #_logger.error('##### AIKO ###### En carga datos LINEAS ponemos res a 0 porque no hay lineas en el fichero')
                 res = 0
         fln.close()
     #21-3-16 si devolvemos res = 0 no hay lineas o no coincide el num.pedido, si hay lineas de devolucion devolvemos 1, si hay nueva tarifa su id, si no devolvemos -99
+    #_logger.error('##### AIKO ###### En carga datos LINEAS salimos con valor de res:%s'%res)
     return res
 
  
@@ -1416,7 +1647,7 @@ def desmarca_inv_lines (self, cr, uid, sale_id, context=None):
             for line in sale_line_obj_id:
                 valor_lineas = sale_line_obj.browse(cr,uid,line).sequence
                 #_logger.error('##### AIKO ###### Desmarca_inv_lines invoiced false en la secuencia %s'%valor_lineas)
-            sale_line_obj.write(cr, uid, sale_line_obj_id, {'invoiced':0}, context=None)
+            sale_line_obj.write(cr, SUPERUSER_ID, sale_line_obj_id, {'invoiced':0}, context=None)
 
 def albaranar_pedido (self, cr, uid, name_pedido, context=None):
     picking_obj = self.pool.get('stock.picking')
@@ -1424,9 +1655,9 @@ def albaranar_pedido (self, cr, uid, name_pedido, context=None):
     #_logger.error('##### AIKO ###### Buscando el albaran de facturacion de la orden:%s'%name_pedido)
     picking_obj_id = picking_obj.search(cr, uid, search_condition)
     if (len(picking_obj_id)!=0):   
-        picking_obj.force_assign(cr, uid, picking_obj_id, context=None)
-        picking_obj.do_enter_transfer_details(cr, uid, picking_obj_id, context=None)
-        picking_obj.action_done(cr, uid, picking_obj_id, context=None)
+        picking_obj.force_assign(cr, SUPERUSER_ID, picking_obj_id, context=None)
+        picking_obj.do_enter_transfer_details(cr, SUPERUSER_ID, picking_obj_id, context=None)
+        picking_obj.action_done(cr, SUPERUSER_ID, picking_obj_id, context=None)
     #else:
         #_logger.error('##### AIKO ###### No se encuentra en stock.picking el origen:%s'%name_pedido)
 
@@ -1436,7 +1667,7 @@ def renumerar_albaran (self, cr, uid, name_pedido, context=None):
     #_logger.error('##### AIKO ###### Buscando renumerar albaran de facturacion de la orden:%s'%name_pedido)
     picking_obj_id = picking_obj.search(cr, uid, search_condition)
     if (len(picking_obj_id)!=0):   
-        picking_obj.write(cr, uid, picking_obj_id, {'name':name_pedido},context=None)
+        picking_obj.write(cr, SUPERUSER_ID, picking_obj_id, {'name':name_pedido},context=None)
     else:
         _logger.error('##### AIKO ###### No se encuentra en stock.picking el origen:%s'%name_pedido)
 
@@ -1479,7 +1710,7 @@ def retornar_pedido (self, cr, uid, ter_codproducto, ter_descripcion, qty_devol,
     move_obj_id = move_obj.create (cr,SUPERUSER_ID,values,context=None) 
     #_logger.error('##### AIKO ###### En retornar pedido creado nuevo movimiento de stock:%s'%move_obj_id)
     #una vez creado ejecutamos action_done
-    retpedido = move_obj.action_done(cr, uid, move_obj_id, context=context)
+    retpedido = move_obj.action_done(cr, SUPERUSER_ID, move_obj_id, context=context)
     #_logger.error('##### AIKO ###### No se encuentra en stock.picking el origen:%s'%name_pedido)
 
 
@@ -1517,10 +1748,10 @@ def registrar_cobro_factura (self, cr, uid, acc_invoice_id, ter_cobrado, ter_pen
     #registramos las lineas de ese recibo
     voucher.crea_lineas_voucher(self, cr, uid, acc_invoice_id, cobro, new_voucher_id, context=context)
     #con el nuevo voucher creado registramos el pago de la factura
-    voucher_obj.button_proforma_voucher(cr, uid, [new_voucher_id], context=context)
+    voucher_obj.button_proforma_voucher(cr, SUPERUSER_ID, [new_voucher_id], context=context)
     #si el residual de la factura queda a cero, marcamos la factura para no volver a asociar pagos de sus pedidos
     if conciliar==1:
-        acc_invoice.write(cr, uid, acc_invoice_id,{'payment_reconcile':'True'},context=context)
+        acc_invoice.write(cr, SUPERUSER_ID, acc_invoice_id,{'payment_reconcile':'True'},context=context)
 
 
 
@@ -1545,7 +1776,7 @@ def carga_datos_cobros (self, cr, uid, ids, ruta, file, context=None):
     datos_cli = self.pool.get('res.partner')
     voucher_obj = self.pool.get('account.voucher')
 
-    res = 0
+    rescobro = 0
     os.chdir(ruta)
     for nombre in glob.glob(file):
         #_logger.error('##### AIKO ###### En carga datos cobros encuentro fichero:%s'%file)
@@ -1560,8 +1791,8 @@ def carga_datos_cobros (self, cr, uid, ids, ruta, file, context=None):
                 #lines[2] = Numero Documento
                 #lines[3] = Tipo Documento
                 #lines[4] = Fecha Documento
-                #lines[5] = Importe Documento (importe cobrado)
-                #lines[6] = Importe Pendiente; 0 indica que está cobrado completo
+                #lines[5] = Importe Documento (importe total del documento)
+                #lines[6] = Importe Pendiente; 0 indica que está cobrado completo, un resto indica un cobro parcial por diferencia con el anterior
                 #lines[7] = Cod Cliente Alternativo (no se usa)
                 #lines[8] = Cod Direc. Alternativo (no se usa)
 
@@ -1590,16 +1821,24 @@ def carga_datos_cobros (self, cr, uid, ids, ruta, file, context=None):
                         res_search = 0
                 elif (int(float(lines[3]))==1):
                     search_condition = [('number','=',ustr(lines[2])),('partner_id','=',datos_cli_sr[0]),('state','=','open')]
-                    #_logger.error('##### AIKO ###### En carga datos cobros busco factura:%s'%search_condition)
                     acc_invoice_id = acc_invoice.search (cr, uid, search_condition)
                     if(len (acc_invoice_id)!=0):
                         #devolvemos uno para indicar que hemos encontrado factura coincidente
                         res_search = 1
+                    #15-12-16: puede que nos llegue un cobro con numero de tercap en lugar de numero de Odoo
+                    else:
+                        iden_doc = 'tf%'+ ustr(lines[2])
+                        search_condition = [('number','ilike',iden_doc),('partner_id','=',datos_cli_sr[0]),('state','=','open')]
+                        #_logger.error('##### AIKO ###### En carga datos cobros busco factura:%s'%search_condition)
+                        acc_invoice_id = acc_invoice.search (cr, uid, search_condition)
+                        if(len (acc_invoice_id)!=0):
+                            #devolvemos uno para indicar que hemos encontrado factura coincidente
+                            res_search = 1
 
                 #si no hay coincidencias seguimos a otra linea
                 if (res_search==3):
                     _logger.error('##### AIKO ###### En carga datos cobros no encuentro documento:%s'%search_condition)
-                    res+=1
+                    rescobro+=1
                     continue
                 elif (res_search==1):
                     #en este punto registrar el cobro de una factura
@@ -1609,18 +1848,19 @@ def carga_datos_cobros (self, cr, uid, ids, ruta, file, context=None):
                         acc_inv_sel = acc_invoice.browse(cr, uid, acc_invoice_id)
                         cobro = acc_inv_sel.residual
                     else:
-                        cobro = float(lines[5])
-                    new_voucher_id = voucher.crea_voucher(self, cr, uid, acc_invoice_id, cobro, context=context)
+                        cobro = float(lines[5])-lines[6]
+                    new_voucher_id = voucher.crea_voucher(self, cr, SUPERUSER_ID, acc_invoice_id, cobro, context=context)
                     #registramos las lineas de ese recibo
                     voucher.crea_lineas_voucher(self, cr, uid, acc_invoice_id, cobro, new_voucher_id, context=context)
                     #_logger.error('##### AIKO ###### En carga datos cobros encontramos factura creamos voucher:%s'%new_voucher_id)
                     #con el nuevo voucher creado registramos el pago de la factura
-                    voucher_obj.button_proforma_voucher(cr, uid, [new_voucher_id], context=context)
+                    voucher_obj.button_proforma_voucher(cr, SUPERUSER_ID, [new_voucher_id], context=context)
                     if float(lines[6])==0:
                         #si no queda pendiente, marcamos la factura para no volver a asociar pagos de sus pedidos
-                        acc_invoice.write(cr, uid, acc_invoice_id,{'payment_reconcile':'True'},context=context)
+                        acc_invoice.write(cr, SUPERUSER_ID, acc_invoice_id,{'payment_reconcile':'True'},context=context)
+                        acc_invoice.write(cr, SUPERUSER_ID, acc_invoice_id,{'state':'paid'},context=context)
                         #_logger.error('##### AIKO ###### En carga datos cobros encontramos factura conciliada:%s'%new_voucher_id)
-                    res+=1
+                    rescobro+=1
                 elif (res_search==0):
                     #llegados a este punto (es un pedido) registrar el cobro del pedido siempre que no este ya facturado
                     #para saber si esta facturado usamos la tabla sale_order_invoice_rel
@@ -1642,25 +1882,27 @@ def carga_datos_cobros (self, cr, uid, ids, ruta, file, context=None):
                         #_logger.error('##### AIKO ###### En carga datos cobros invoice_rel_id:%s'%invoice_rel_id[0])
                         #_logger.error('##### AIKO ###### En carga datos cobros pago factura rel valor cobro:%s'%float(lines[5]))
                         #_logger.error('##### AIKO ###### En carga datos cobros pago factura rel valor pendiente:%s'%float(lines[6]))
-                        registrar_cobro_factura (self, cr, uid, invoice_rel_id[0], float(lines[5]), float(lines[6]), context=context)
-                        res+=1
+                        cobro = float(lines[5])-lines[6]
+                        registrar_cobro_factura (self, cr, uid, invoice_rel_id[0], cobro, float(lines[6]), context=context)
+                        rescobro+=1
                     else:
                         #_logger.error('##### AIKO ###### En carga datos cobros valor de sale order:%s'%sale_ord_id[0])
                         sale_order_sel = sale_ord.browse(cr, uid, sale_ord_id[0])
                         #comprobamos que tenga pendiente en Odoo, si no tiene ignoramos este cobro
                         if (sale_order_sel.residual==0):
                             #_logger.error('##### AIKO ###### En carga datos cobros pedido sin pendiente:%s'%sale_ord_id[0])
-                            res+=1
+                            rescobro+=1
                             continue
                         #evitamos importes negativos de momento
-                        if (float(lines[5])<0):
+                        cobro = float(lines[5])-lines[6]
+                        if (cobro<0):
                             #_logger.error('##### AIKO ###### En carga datos cobros cobrado importe negativo:%s'%sale_ord_id[0])
                             continue
                         #si el importe cobrado es mayor que el residual, pasamos el importe pendiente, no el cobro
-                        if (sale_order_sel.residual < float(lines[5])):
+                        if (sale_order_sel.residual < cobro):
                             ter_cobrado = sale_order_sel.residual
                         else:
-                            ter_cobrado = float(lines[5])
+                            ter_cobrado = cobro
                         #y si Tercap da por cobrado el total del documento, pasamos el residual
                         if float(lines[6])==0:
                             ter_cobrado = sale_order_sel.residual
@@ -1671,8 +1913,8 @@ def carga_datos_cobros (self, cr, uid, ids, ruta, file, context=None):
                         dia_pago = str(lines[4])[:10]
                         #_logger.error('##### AIKO ###### En carga datos cobros traspaso dia_pago:%s'%dia_pago)
                         registrar_cobro (self, cr, uid, ter_numdoc, ter_cobrado, journal_obj_id, sale_ord_id[0], dia_pago, context=None)
-                        res+=1
-    return res
+                        rescobro+=1
+    return rescobro
  
 
 def crear_item_tarifa (self, cr, uid, version, product_id, net_price, context=None):
@@ -1688,3 +1930,19 @@ def crear_item_tarifa (self, cr, uid, version, product_id, net_price, context=No
     #_logger.error('##### AIKO ###### En crea_item_tarifa creada nuevo valor con valores %s'%val_prices)
 
     return True
+
+def crear_lote (self, cr, uid, product_id, lot_name, context=None):
+    lot_object = self.pool.get('stock.production.lot')
+
+    val_lote={}
+    val_lote['name']=lot_name
+    val_lote['product_id']= product_id
+    val_lote['ref'] = 'tercap_import_'+lot_name
+    reslote = lot_object.create (cr, SUPERUSER_ID, val_lote, context=context)
+    #_logger.error('##### AIKO ###### En crear_lote creado nuevo lote con valores %s'%val_lote)
+
+    return reslote
+
+def asocia_lineas_factura (self, cr, uid, inv_line_id, sale_line_id, context=None):
+    #_logger.error('##### AIKO ###### En asocia_lineas_factura valores recibidos para sale , inv %s,%s'%(sale_line_id,inv_line_id)
+    cr.execute("INSERT INTO sale_order_line_invoice_rel (order_line_id, invoice_id) VALUES (%s,%s)",(sale_line_id,inv_line_id))

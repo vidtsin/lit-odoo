@@ -1,5 +1,0 @@
-id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_veral_partner_product,control_veral_partner_product,veral.model_veral_partner_product,base.group_sale_salesman,1,1,1,1
-access_veral_product_type,control_veral_product_type,veral.model_veral_product_type,base.group_sale_salesman,1,1,1,1
-access_veral_product_subtype,control_veral_product_subtype,veral.model_veral_product_subtype,base.group_sale_salesman,1,1,1,1
-access_veral_partner_maquinas,control_veral_partner_maquinas,veral.model_veral_partner_maquinas,base.group_sale_salesman,1,1,1,1

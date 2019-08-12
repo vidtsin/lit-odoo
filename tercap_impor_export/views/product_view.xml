@@ -21,6 +21,7 @@
               </notebook>
               <xpath expr="//field[@name='list_price']" position="after">
                 <field name="min_price" />
+                <field name="max_price" />
               </xpath>
             </field>
         </record>

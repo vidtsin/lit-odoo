@@ -19,7 +19,7 @@
 #
 ##############################################################################
 
-from openerp import models, fields, api
+from openerp import models, fields
 
 
 class pricelist_partnerinfo(models.Model):
@@ -37,25 +37,11 @@ class pricelist_partnerinfo(models.Model):
         string='Product Name', related='suppinfo_id.product_name', store=True)
     product_code = fields.Char(
         string='Product Code', related='suppinfo_id.product_code', store=True)
-    product_cost = fields.Float(
-        string='Product Cost', related='product_tmpl_id.standard_price')
-    product_pricelist = fields.Float(
-        string='Product Price List', related='product_tmpl_id.list_price')
-    product_uom_po = fields.Char(
-        string='Purchase UOM', related='product_tmpl_id.uom_po_id.name')
     sequence = fields.Integer(
         string='Sequence', related='suppinfo_id.sequence', store=True)
     company_id = fields.Many2one(
         comodel_name='res.company', string='Company',
         related='suppinfo_id.company_id', store=True)
-    net_price = fields.Float (compute = '_get_net_price')
-
-
-    @api.one
-    def _get_net_price(self):
-
-        self.net_price = self.price * ((100-self.discount) /100)
-
 
 
 # vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:

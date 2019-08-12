@@ -60,6 +60,7 @@ class export_control(osv.osv):
         'lineas_carga_mercancia_725': fields.boolean('Lineas Cargas Mercancias?'),
         'lineas_stock_726': fields.boolean('Stock real?'),
         'lineas_stock_726V': fields.boolean('Stock virtual?'),
+        'lineas_stock_726L': fields.boolean('Lotes de Productos'),
     }
 
 #cambio de criterio del 24/6/16: ponemos a false el valor del rutero y como Administrador
@@ -94,6 +95,7 @@ class export_control(osv.osv):
         'lineas_carga_mercancia_725': False,
         'lineas_stock_726': False,
         'lineas_stock_726V': False,
+        'lineas_stock_726L': False,
     }
 
 
@@ -183,11 +185,14 @@ class export_control(osv.osv):
         if (obj_actividad.lineas_carga_mercancia_725 == True):
             exporta._create_report725(self, cr, uid, ids, context=None)
 
-        if (obj_actividad.lineas_stock_726 == True):
+        if (obj_actividad.lineas_stock_726 == True) and (obj_actividad.lineas_stock_726V == False) and (obj_actividad.lineas_stock_726L == False):
             exporta._create_report726(self, cr, uid, ids, context=None)
 
-        if (obj_actividad.lineas_stock_726V == True):
+        if (obj_actividad.lineas_stock_726V == True) and (obj_actividad.lineas_stock_726 == False) and (obj_actividad.lineas_stock_726L == False):
             exporta._create_report726V(self, cr, uid, ids, context=None)
+
+        if (obj_actividad.lineas_stock_726L == True) and (obj_actividad.lineas_stock_726V == False) and (obj_actividad.lineas_stock_726 == False):
+            exporta._create_report726L(self, cr, uid, ids, context=None)
 
         if (obj_actividad.productos_exclusivos_723 == True):
             exporta._create_report723(self, cr, uid, ids, context=None)
@@ -331,7 +336,7 @@ class account_payment_term(osv.osv):
     _columns = { 
         'tercap_cod_forma_pago': fields.selection([  
             ('0', 'Credito'),                              
-            ('1', 'Contado')], 'Codigo forma Pago TERCAP:'),  
+            ('1', 'Contado')], 'Codigo forma Pago TERCAP:'),
 #         'tercap_creditocontado': fields.selection([  
 #             ('N', 'Contado'),
 #             ('S', 'Credito'),
@@ -347,8 +352,13 @@ class payment_mode(osv.osv):
     _columns = { 
         'tercap_cod_modo_pago': fields.selection([  
             ('0', 'Credito'),                              
-            ('1', 'Contado')], 'Codigo forma Pago TERCAP:'),    
-        }    
+            ('1', 'Contado')], 'Codigo forma Pago TERCAP:'), 
+        'tercap_comunicate': fields.boolean('Forma de Pago para Tercap'),     
+        }   
+
+    _defaults = {
+        'tercap_comunicate': True
+    } 
 
 
 class product_uom(osv.osv):

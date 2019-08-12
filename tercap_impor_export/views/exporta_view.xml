@@ -36,7 +36,8 @@
 					<field name="lineas_carga_mercancia_725"/>
 					<field name="lineas_stock_726"/>
           <field name="lineas_stock_726V"/>  
-          <field name="productos_exclusivos_723"/>						
+          <field name="productos_exclusivos_723"/>
+          <field name="lineas_stock_726L"/>						
 			</group> 
   
 	        <footer > 

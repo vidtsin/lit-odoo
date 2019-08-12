@@ -59,7 +59,7 @@ class AccountInvoice(models.Model):
                 for picking in invoice.picking_ids.filtered(
                         lambda x: x.state != 'cancel'):
                     picking.write({'invoice_state': '2binvoiced'})
-        return super(AccountInvoice, self).unlink()
+            return super(AccountInvoice, invoice).unlink()
 
     @api.multi
     def action_cancel(self):

@@ -30,9 +30,9 @@
     "description": """
 sale_order_team
 ====================================
-Use sale teams on sale order an res partner forms
+Use sale teams on sale order form
                     """,
-    "depends" : ['sale', 'sales_team','base'],
+    "depends" : ['sale', 'sales_team'],
     "data" : [
         'sale_order_team_view.xml',
         ],

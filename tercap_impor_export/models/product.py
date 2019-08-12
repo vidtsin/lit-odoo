@@ -30,6 +30,7 @@ class product_template(osv.osv):
     #creamos un campo para registrar el precio minimo de venta en productos
     _columns = {
         'min_price' :fields.float('Precio Minimo', digits_compute=dp.get_precision('Product Price'), help="Precio minimo de venta para el producto"),
+        'max_price' :fields.float('Precio Maximo', digits_compute=dp.get_precision('Product Price'), help="Precio maximo de venta para el producto"),
     }
     _defaults = {
         'min_price' : 0.0,
