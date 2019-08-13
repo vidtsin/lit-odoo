@@ -18,11 +18,11 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##############################################################################
- 
+
 # noinspection PyStatementEffect
 {
     "name" : "Filter from date to date",
-    
+
     "author" : "LiderIT",
     "website" : "www.liderit.es",
     "category" : "Other",
@@ -33,7 +33,7 @@ filter_from_to_date
 Filter dates both to one datetime o from one datetime.
 Filter stock picking, sale orders, purchase orders and invoices.
                     """,
-    "depends" : ['sale','purchase','stock','account'],
+    "depends" : ['sale','purchase','stock','account','account_due_list'],
     "data" : [
         'filter_fromto_date_view.xml',
         ],
