@@ -243,6 +243,7 @@ class SaleOrder(models.Model):
 						'tip_ped' :line.tip_ped or "",
 						'num_ped_cli' : line.num_ped_cli or "",
 						'note' : line.obser or "",
+						'europ_obseq': line.obsequio,
 						}
 				
 				if cli_europ:

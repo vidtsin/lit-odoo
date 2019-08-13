@@ -56,7 +56,7 @@ class europastry_sinc(models.Model):
 	direccion = fields.Char (string = _('Direccion'))
 	poblacion = fields.Char (string = _('Poblacion'))
 	provincia = fields.Char (string = _('Provincia'))
-	cp = fields.Integer (string = _('Codigo Postal'))
+	cp = fields.Char (string = _('Codigo Postal'))
 	telef = fields.Char (string = _('Telefono'))
 	fax = fields.Char (string = _('Fax'))
 	zona_com = fields.Char (string = _('Zona Comercial'))
@@ -163,6 +163,8 @@ class europastry_sinc(models.Model):
 							cli_telef=""
 							cli_fax=""
 							cli_zona=""
+							imp_b=""
+							imp_n=""
 						else:
 							cli_euro="NO"
 							cli_nombre=picking.partner_id.name.strip() or ""
@@ -180,6 +182,8 @@ class europastry_sinc(models.Model):
 							cli_telef=picking.partner_id.phone or ""
 							cli_fax=picking.partner_id.fax or ""
 							cli_zona=""
+							imp_b=line.product_id.list_price
+							imp_n=line.product_id.list_price*cantidad
 						
 						self.create({
 							'cod_dist' : 436381,
@@ -208,16 +212,16 @@ class europastry_sinc(models.Model):
 							'fab_artic' : "SI",				
 							'cantidad' : cantidad or "",
 							'unidad_med' : str(line.product_uom.name or ""),					
-							'obsequio' : picking.europ_obseq or "",
+							'obsequio' : picking.europ_obseq or "N",
 							'lote' : lotes or "",
-							'imp_bruto' : line.product_id.list_price or "",
-							'imp_neto' : line.product_id.list_price*cantidad,
+							'imp_bruto' :  imp_b,
+							'imp_neto' : imp_n,
 							'divisa' : "EUR",
 							'co_promo' : picking.promo or "",
 							'obser' : picking.sale_id.note or "",
 							'potencial' :picking.partner_id.europ_potencial or "",
-							'cuota' : picking.partner_id.europ_cuota,
-							'competencia' : picking.partner_id.europ_competencia,
+							'cuota' : picking.partner_id.europ_cuota or "",
+							'competencia' : picking.partner_id.europ_competencia or "",
 							'n_pedido_eurp' : picking.europastry_order or "",
 							'motivo_no_ent' : picking.motivo_no_ent or "",					
 						})
@@ -238,6 +242,13 @@ class europastry_sinc(models.Model):
 			writer = csv.writer(f,delimiter=';')
 			
 			for line in lines:
+				imp_bruto=line.imp_bruto
+				if line.imp_bruto==0.0:
+					imp_bruto=""
+				imp_neto=line.imp_neto
+				if line.imp_neto==0.0:
+					imp_neto=""
+
 				writer.writerow(( 
 					line.cod_dist,
 					line.cod_cli,
@@ -267,8 +278,8 @@ class europastry_sinc(models.Model):
 					line.unidad_med,
 					line.obsequio,
 					line.lote,
-					line.imp_bruto,
-					line.imp_neto,
+					imp_bruto,
+					imp_neto,
 					line.divisa,
 					line.co_promo,
 					line.obser,
