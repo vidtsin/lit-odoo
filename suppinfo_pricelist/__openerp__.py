@@ -28,14 +28,14 @@ Gestiona las tarifas de compra
 =============================================================
     Despues de instalar este modulo se podran visualizar
     las tarifas de compra por provedor y articulo.
-    
+
     """,
     "author": "LiderIT",
     'maintainer': 'LiderIT',
     'website': 'http://www.liderit.es',
     "license": "AGPL-3",
     'images': [],
-    'depends': ['purchase'],
+    'depends': ['purchase','sale_by_supplier'],
     'data': [
         'suppinfo_pricelist.xml',
     ],
