@@ -40,16 +40,18 @@ class resPartner(models.Model):
                       {where} ({email} {operator} {percent}
                            OR {display_name} {operator} {percent}
                            OR {comercial} {operator} {percent}
-                           OR {ref} {operator} {percent})
+                           OR {ref} {operator} {percent}
+                           OR {vat} {operator} {percent})
                      ORDER BY {display_name}
                     """.format(where=where_str, operator=operator,
                                email=unaccent('email'),
                                display_name=unaccent('display_name'),
                                comercial=unaccent('comercial'),
                                ref=unaccent('ref'),
+                               vat=unaccent('vat'),
                                percent=unaccent('%s'))
 
-            where_clause_params += [search_name, search_name,search_name,search_name]
+            where_clause_params += [search_name,search_name,search_name,search_name,search_name]
             if limit:
                 query += ' limit %s'
                 where_clause_params.append(limit)
@@ -62,8 +64,8 @@ class resPartner(models.Model):
                 return []
         return super(resPartner,self).name_search(cr, uid, name, args, operator=operator, context=context, limit=limit)
 
-   
-   
+
+
 
     def name_get(self, cr, uid, ids, context=None):
 
@@ -88,4 +90,3 @@ class resPartner(models.Model):
               name = '('+record.comercial.strip()+') '+name
             res.append((record.id, name))
         return res
-
